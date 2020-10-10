@@ -50,15 +50,15 @@ me = Haskeller
     }
 
 nameL :: Lens' Haskeller String
-nameL = lens haskellerName (\new h -> h { haskellerName = new })
+nameL = lens haskellerName (\h new -> h { haskellerName = new })
 {-# INLINE nameL #-}
 
 knowledgeL :: Lens' Haskeller Knowledge
-knowledgeL = lens haskellerKnowledge (\new h -> h { haskellerKnowledge = new })
+knowledgeL = lens haskellerKnowledge (\h new -> h { haskellerKnowledge = new })
 {-# INLINE knowledgeL #-}
 
 syntaxL :: Lens' Knowledge Bool
-syntaxL = lens kSyntax (\new k -> k { kSyntax = new })
+syntaxL = lens kSyntax (\k new -> k { kSyntax = new })
 {-# INLINE syntaxL #-}
 
 -- Generators
