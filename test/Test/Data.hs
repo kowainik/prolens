@@ -9,14 +9,17 @@ module Test.Data
     , me
 
       -- * Generators
+    , genFun
+    , genFunction
     , genHaskeller
+    , genInt
     , genKnowledge
     , genName
     ) where
 
 import Test.Hspec.Hedgehog (MonadGen)
 
-import Prolens (Lens', lens)
+import Prolens (Fun (..), Lens', lens)
 
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
@@ -81,3 +84,23 @@ genHaskeller = do
 
 genName :: MonadGen m => m String
 genName = Gen.string (Range.linear 1 50) Gen.alphaNum
+
+genInt :: MonadGen m => m Int
+genInt = Gen.enumBounded
+
+genFunction :: MonadGen m => m (Int -> Int)
+genFunction = genInt >>= \n -> Gen.element
+    [ id
+    , const n
+    , (+ n)
+    , (* n)
+    , subtract n
+    , \x -> if x >= n then 1 else 0
+    ]
+
+genFun :: MonadGen m => m (Fun Maybe Int Int)
+genFun = genFunction >>= \f -> Gen.element $ map Fun
+    [ Just
+    , const Nothing
+    , Just . f
+    ]
