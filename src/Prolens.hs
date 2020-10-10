@@ -40,25 +40,37 @@ import Control.Applicative (Const (..))
 import Data.Coerce (coerce)
 
 
+{- |
+
+Instances of 'Profunctor' should satisfy the following laws:
+
+* __Identity:__ @'dimap' 'id' 'id' ≡ 'id'@
+* __Composition:__ @'dimap' (ab . bc) (yz . xy) ≡ 'dimap' bc yz . 'dimap' ab xy@
+
+@since 0.0.0.0
+-}
 -- type Profunctor :: (Type -> Type -> Type) -> Constraint
 class (forall a . Functor (p a)) => Profunctor p where
     dimap :: (a -> b) -> (c -> d) -> p b c -> p a d
 
+-- | @since 0.0.0.0
 instance Profunctor (->) where
     dimap :: (a -> b) -> (c -> d) -> (b -> c) -> (a -> d)
     dimap ab cd bc = cd . bc . ab
     {-# INLINE dimap #-}
 
+-- | @since 0.0.0.0
 newtype Fun m a b = Fun
     { unFun :: a -> m b
     }
 
--- @since 0.0.0.0
+-- | @since 0.0.0.0
 instance Functor m => Functor (Fun m x) where
     fmap :: (a -> b) -> Fun m x a -> Fun m x b
     fmap f (Fun xma) = Fun (fmap f . xma)
     {-# INLINE fmap #-}
 
+-- | @since 0.0.0.0
 instance Functor m => Profunctor (Fun m) where
     dimap :: (a -> b) -> (c -> d) -> Fun m b c -> Fun m a d
     dimap ab cd (Fun bmc) = Fun (fmap cd . bmc . ab)
