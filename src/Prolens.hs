@@ -96,12 +96,12 @@ class Profunctor p => Choice p where
     right :: p a b -> p (Either c a) (Either c b)
 
 instance Choice (->) where
-    left  :: (a -> b) -> (Either a c) -> (Either b c)
+    left  :: (a -> b) -> Either a c -> Either b c
     left ab = \case
         Left a  -> Left $ ab a
         Right c -> Right c
 
-    right :: (a -> b) -> (Either c a) -> (Either c b)
+    right :: (a -> b) -> Either c a -> Either c b
     right ab = \case
         Right a -> Right $ ab a
         Left c  -> Left c
@@ -124,7 +124,7 @@ type Lens' s   a   = Lens s s a a
 
 set :: (p ~ (->))
     => Optic p s t a b -> b -> s -> t
-set = \abst -> abst . const
+set abst = abst . const
 {-# INLINE set #-}
 
 over
@@ -134,7 +134,7 @@ over = id
 {-# INLINE over #-}
 
 view
-    :: (p ~ (Fun (Const a)))
+    :: (p ~ Fun (Const a))
     => Optic p s t a b -> (s -> a)
 view opt = coerce (opt (Fun Const))
 {-# INLINE view #-}
