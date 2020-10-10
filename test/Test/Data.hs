@@ -7,16 +7,26 @@ module Test.Data
     , syntaxL
 
     , me
+
+      -- * Generators
+    , genHaskeller
+    , genKnowledge
+    , genName
     ) where
 
+import Test.Hspec.Hedgehog (MonadGen)
+
 import Prolens (Lens', lens)
+
+import qualified Hedgehog.Gen as Gen
+import qualified Hedgehog.Range as Range
 
 
 data Haskeller = Haskeller
     { haskellerName       :: String
     , haskellerExperience :: Int
     , haskellerKnowledge  :: Knowledge
-    } deriving stock (Show)
+    } deriving stock (Show, Eq)
 
 data Knowledge = Knowledge
     { kSyntax         :: Bool
@@ -24,7 +34,7 @@ data Knowledge = Knowledge
     , kLens           :: Bool
     , kTypeLevelMagic :: Bool
     , kNix            :: Bool
-    } deriving stock (Show)
+    } deriving stock (Show, Eq)
 
 me :: Haskeller
 me = Haskeller
@@ -50,3 +60,24 @@ knowledgeL = lens haskellerKnowledge (\new h -> h { haskellerKnowledge = new })
 syntaxL :: Lens' Knowledge Bool
 syntaxL = lens kSyntax (\new k -> k { kSyntax = new })
 {-# INLINE syntaxL #-}
+
+-- Generators
+
+genKnowledge :: (MonadGen m) => m Knowledge
+genKnowledge = do
+    kSyntax <- Gen.bool
+    kMonads <- Gen.bool
+    kLens <- Gen.bool
+    kTypeLevelMagic <- Gen.bool
+    kNix <- Gen.bool
+    pure Knowledge{..}
+
+genHaskeller :: (MonadGen m) => m Haskeller
+genHaskeller = do
+    haskellerName <- genName
+    haskellerExperience <- Gen.int $ Range.linear 0 50
+    haskellerKnowledge <- genKnowledge
+    pure Haskeller{..}
+
+genName :: MonadGen m => m String
+genName = Gen.string (Range.linear 1 50) Gen.alphaNum

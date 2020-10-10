@@ -74,12 +74,14 @@ test-suite prolens-test
 
   other-modules:       Test.Data
                        Test.Prolens
+                       Test.Prolens.Property
                        Test.Prolens.Inspection
 
   build-depends:       prolens
+                     , hedgehog  >= 1.0.2 && < 2
                      , hspec ^>= 2.7.4
+                     , hspec-hedgehog
                      , inspection-testing ^>= 0.4
-
   ghc-options:         -threaded
                        -rtsopts
                        -with-rtsopts=-N
