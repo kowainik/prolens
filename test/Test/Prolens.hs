@@ -17,7 +17,7 @@ unitSpecs = describe "Prolens unit tests" $ do
         it "should get name with ^." $
             (me ^. nameL) `shouldBe` "Veronika"
     describe "setter" $ do
-        it "should set name with .~" $
-            view nameL (set nameL "Dmitrii" me) `shouldBe` "Dmitrii"
         it "should set name" $
+            view nameL (set nameL "Dmitrii" me) `shouldBe` "Dmitrii"
+        it "should set name with .~" $
             (me & nameL .~ "Dmitrii") ^. nameL `shouldBe` "Dmitrii"
