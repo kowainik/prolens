@@ -29,6 +29,11 @@ module Prolens
     , over
     , view
     , lens
+
+      -- * Lenses operators
+    , (^.)
+    , (.~)
+    , (%~)
     ) where
 
 
@@ -108,18 +113,50 @@ type Lens' s   a   = Lens s s a a
 set :: (p ~ (->))
     => Optic p s t a b -> b -> s -> t
 set = \abst -> abst . const
+{-# INLINE set #-}
 
 over
     :: (p ~ (->))
     => Optic p s t a b -> (a -> b) -> s -> t
 over = id
+{-# INLINE over #-}
 
 view
     :: (p ~ (Fun (Const a)))
     => Optic p s t a b -> (s -> a)
 view opt = getConst . unFun (opt (Fun Const))
+{-# INLINE view #-}
     -- opt :: Fun (Const a) a b -> Fun (Const a) s t
     -- opt :: (a -> Const a b) -> ( s -> Const a t)
 
 lens :: (s -> a) -> (b -> s -> t) -> Lens s t a b
 lens sa bst pab = dimap (\s -> (sa s, s)) (uncurry bst) $ first pab
+{-# INLINE lens #-}
+
+
+{- | The operator form of 'view' with the arguments flipped.
+
+@since 0.0.0.0
+-}
+infixl 8 ^.
+(^.) :: s -> Lens' s a -> a
+s ^. l = view l s
+{-# INLINE (^.) #-}
+
+{- | The operator form of 'set'.
+
+@since 0.0.0.0
+-}
+infixr 4 .~
+(.~) :: Lens' s a -> a -> s -> s
+(.~) = set
+{-# INLINE (.~) #-}
+
+{- | The operator form of 'over'.
+
+@since 0.0.0.0
+-}
+infixr 4 %~
+(%~) :: Lens' s a -> (a -> a) -> s -> s
+(%~) = over
+{-# INLINE (%~) #-}
