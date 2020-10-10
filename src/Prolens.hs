@@ -142,8 +142,8 @@ view opt = coerce (opt (Fun Const))
     -- opt :: Fun (Const a) a b -> Fun (Const a) s t
     -- opt :: (a -> Const a b) -> ( s -> Const a t)
 
-lens :: (s -> a) -> (b -> s -> t) -> Lens s t a b
-lens sa bst = dimap (\s -> (sa s, s)) (uncurry bst) . first
+lens :: (s -> a) -> (s -> b -> t) -> Lens s t a b
+lens sa sbt = dimap (\s -> (s, sa s)) (uncurry sbt) . second
 {-# INLINE lens #-}
 
 
