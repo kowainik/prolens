@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveFunctor         #-}
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE TypeFamilies          #-}
@@ -38,6 +37,7 @@ module Prolens
 
 
 import Control.Applicative (Const (..))
+import Data.Coerce (coerce)
 
 
 -- type Profunctor :: (Type -> Type -> Type) -> Constraint
@@ -47,14 +47,22 @@ class (forall a . Functor (p a)) => Profunctor p where
 instance Profunctor (->) where
     dimap :: (a -> b) -> (c -> d) -> (b -> c) -> (a -> d)
     dimap ab cd bc = cd . bc . ab
+    {-# INLINE dimap #-}
 
 newtype Fun m a b = Fun
     { unFun :: a -> m b
-    } deriving stock Functor
+    }
+
+-- @since 0.0.0.0
+instance Functor m => Functor (Fun m x) where
+    fmap :: (a -> b) -> Fun m x a -> Fun m x b
+    fmap f (Fun xma) = Fun (fmap f . xma)
+    {-# INLINE fmap #-}
 
 instance Functor m => Profunctor (Fun m) where
     dimap :: (a -> b) -> (c -> d) -> Fun m b c -> Fun m a d
     dimap ab cd (Fun bmc) = Fun (fmap cd . bmc . ab)
+    {-# INLINE dimap #-}
 
 {-
 type Lens  s t a b = forall f. Functor f => (a -> f b) -> s -> f t
@@ -68,16 +76,20 @@ class Profunctor p => Strong p where
 instance Strong (->) where
     first :: (a -> b) -> (a, c) -> (b, c)
     first ab (a, c) = (ab a, c)
+    {-# INLINE first #-}
 
     second :: (a -> b) -> (c, a) -> (c, b)
     second ab (c, a) = (c, ab a)
+    {-# INLINE second #-}
 
 instance (Functor m) => Strong (Fun m) where
     first :: Fun m a b -> Fun m (a, c) (b, c)
     first (Fun amb) = Fun (\(a, c) -> fmap (, c) (amb a))
+    {-# INLINE first #-}
 
     second :: Fun m a b -> Fun m (c, a) (c, b)
     second (Fun amb) = Fun (\(c, a) -> fmap (c,) (amb a))
+    {-# INLINE second #-}
 
 class Profunctor p => Choice p where
     left :: p a b -> p (Either a c) (Either b c)
@@ -86,13 +98,13 @@ class Profunctor p => Choice p where
 instance Choice (->) where
     left  :: (a -> b) -> (Either a c) -> (Either b c)
     left ab = \case
-        Left a -> Left $ ab a
+        Left a  -> Left $ ab a
         Right c -> Right c
 
     right :: (a -> b) -> (Either c a) -> (Either c b)
     right ab = \case
         Right a -> Right $ ab a
-        Left c -> Left c
+        Left c  -> Left c
 
 class Strong p => Monoidal p where
     pappend :: p a b -> p c d -> p (a,c) (b,d)
@@ -124,13 +136,14 @@ over = id
 view
     :: (p ~ (Fun (Const a)))
     => Optic p s t a b -> (s -> a)
-view opt = getConst . unFun (opt (Fun Const))
+view opt = coerce (opt (Fun Const))
 {-# INLINE view #-}
+-- view opt = getConst . unFun (opt (Fun Const))
     -- opt :: Fun (Const a) a b -> Fun (Const a) s t
     -- opt :: (a -> Const a b) -> ( s -> Const a t)
 
 lens :: (s -> a) -> (b -> s -> t) -> Lens s t a b
-lens sa bst pab = dimap (\s -> (sa s, s)) (uncurry bst) $ first pab
+lens sa bst = dimap (\s -> (sa s, s)) (uncurry bst) . first
 {-# INLINE lens #-}
 
 
