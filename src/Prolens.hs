@@ -117,32 +117,32 @@ instance Monoidal (->) where
     pempty :: a -> a
     pempty = id
 
-type Optic p s t a b = p a b -> p s t
+type Optic p source target a b = p a b -> p source target
 
-type Lens  s t a b = forall p . Strong p => Optic p s t a b
-type Lens' s   a   = Lens s s a a
+type Lens  source target a b = forall p . Strong p => Optic p source target a b
+type Lens' source        a   = Lens source source a a
 
 set :: (p ~ (->))
-    => Optic p s t a b -> b -> s -> t
+    => Optic p source target a b -> b -> source -> target
 set abst = abst . const
 {-# INLINE set #-}
 
 over
     :: (p ~ (->))
-    => Optic p s t a b -> (a -> b) -> s -> t
+    => Optic p source target a b -> (a -> b) -> source -> target
 over = id
 {-# INLINE over #-}
 
 view
     :: (p ~ Fun (Const a))
-    => Optic p s t a b -> (s -> a)
+    => Optic p source target a b -> (source -> a)
 view opt = coerce (opt (Fun Const))
 {-# INLINE view #-}
 -- view opt = getConst . unFun (opt (Fun Const))
     -- opt :: Fun (Const a) a b -> Fun (Const a) s t
     -- opt :: (a -> Const a b) -> ( s -> Const a t)
 
-lens :: (s -> a) -> (s -> b -> t) -> Lens s t a b
+lens :: (source -> a) -> (source -> b -> target) -> Lens source target a b
 lens sa sbt = dimap (\s -> (s, sa s)) (uncurry sbt) . second
 {-# INLINE lens #-}
 
@@ -152,7 +152,7 @@ lens sa sbt = dimap (\s -> (s, sa s)) (uncurry sbt) . second
 @since 0.0.0.0
 -}
 infixl 8 ^.
-(^.) :: s -> Lens' s a -> a
+(^.) :: source -> Lens' source a -> a
 s ^. l = view l s
 {-# INLINE (^.) #-}
 
@@ -161,7 +161,7 @@ s ^. l = view l s
 @since 0.0.0.0
 -}
 infixr 4 .~
-(.~) :: Lens' s a -> a -> s -> s
+(.~) :: Lens' source a -> a -> source -> source
 (.~) = set
 {-# INLINE (.~) #-}
 
@@ -170,6 +170,6 @@ infixr 4 .~
 @since 0.0.0.0
 -}
 infixr 4 %~
-(%~) :: Lens' s a -> (a -> a) -> s -> s
+(%~) :: Lens' source a -> (a -> a) -> source -> source
 (%~) = over
 {-# INLINE (%~) #-}
