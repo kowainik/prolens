@@ -71,7 +71,10 @@ test-suite prolens-test
   type:                exitcode-stdio-1.0
   hs-source-dirs:      test
   main-is:             Spec.hs
+  other-modules:       Test.Data
+                       Test.Prolens
   build-depends:       prolens
+                     , hspec ^>= 2.7.4
   ghc-options:         -threaded
                        -rtsopts
                        -with-rtsopts=-N

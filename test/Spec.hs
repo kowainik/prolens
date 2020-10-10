@@ -1,5 +1,10 @@
 module Main (main) where
 
+import Test.Hspec (hspec)
+
+import Test.Prolens (unitSpecs)
+
 
 main :: IO ()
-main = putStrLn "Tests for prolens"
+main = hspec -- $ do
+    unitSpecs
