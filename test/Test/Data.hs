@@ -1,7 +1,10 @@
 module Test.Data
     ( Haskeller (..)
-    , Knowledge (..)
     , nameL
+    , knowledgeL
+
+    , Knowledge (..)
+    , syntaxL
 
     , me
     ) where
@@ -37,10 +40,13 @@ me = Haskeller
     }
 
 nameL :: Lens' Haskeller String
-nameL = lens getter setter
-  where
-    getter :: Haskeller -> String
-    getter = haskellerName
+nameL = lens haskellerName (\new h -> h { haskellerName = new })
+{-# INLINE nameL #-}
 
-    setter :: String -> Haskeller -> Haskeller
-    setter newName h = h { haskellerName = newName }
+knowledgeL :: Lens' Haskeller Knowledge
+knowledgeL = lens haskellerKnowledge (\new h -> h { haskellerKnowledge = new })
+{-# INLINE knowledgeL #-}
+
+syntaxL :: Lens' Knowledge Bool
+syntaxL = lens kSyntax (\new k -> k { kSyntax = new })
+{-# INLINE syntaxL #-}
