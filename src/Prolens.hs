@@ -56,18 +56,18 @@ import Data.Monoid (First (..))
 Instances of 'Profunctor' should satisfy the following laws:
 
 * __Identity:__ @'dimap' 'id' 'id' ≡ 'id'@
-* __Composition:__ @'dimap' (ab . bc) (yz . xy) ≡ 'dimap' bc yz . 'dimap' ab xy@
+* __Composition:__ @'dimap' (inAB . inBC) (outYZ . outXY) ≡ 'dimap' outBC outYZ . 'dimap' outAB outXY@
 
 @since 0.0.0.0
 -}
 -- type Profunctor :: (Type -> Type -> Type) -> Constraint
 class (forall a . Functor (p a)) => Profunctor p where
-    dimap :: (a -> b) -> (c -> d) -> p b c -> p a d
+    dimap :: (in2 -> in1) -> (out1 -> out2) -> p in1 out1 -> p in2 out2
 
 -- | @since 0.0.0.0
 instance Profunctor (->) where
-    dimap :: (a -> b) -> (c -> d) -> (b -> c) -> (a -> d)
-    dimap ab cd bc = cd . bc . ab
+    dimap :: (in2 -> in1) -> (out1 -> out2) -> (in1 -> out1) -> (in2 -> out2)
+    dimap in21 out12 f = out12 . f . in21
     {-# INLINE dimap #-}
 
 -- | @since 0.0.0.0
@@ -83,8 +83,8 @@ instance Functor m => Functor (Fun m x) where
 
 -- | @since 0.0.0.0
 instance Functor m => Profunctor (Fun m) where
-    dimap :: (a -> b) -> (c -> d) -> Fun m b c -> Fun m a d
-    dimap ab cd (Fun bmc) = Fun (fmap cd . bmc . ab)
+    dimap :: (in2 -> in1) -> (out1 -> out2) -> Fun m in1 out1 -> Fun m in2 out2
+    dimap in21 out12 (Fun f) = Fun (fmap out12 . f . in21)
     {-# INLINE dimap #-}
 
 {-
@@ -93,7 +93,7 @@ type Lens' s   a   = forall f. Functor f => (a -> f a) -> s -> f s
 
 -}
 class Profunctor p => Strong p where
-    first :: p a b -> p (a, c) (b, c)
+    first  :: p a b -> p (a, c) (b, c)
     second :: p a b -> p (c, a) (c, b)
 
 instance Strong (->) where
@@ -151,6 +151,12 @@ instance Monoidal (->) where
     pempty :: a -> a
     pempty = id
 
+{- | 'Optic' takes a connection from @a@ to @b@ (represented as a
+value of type @p a b@) and returns a connection from @source@ to
+@target@ (represented as a value of type @p source target@).
+
+@since 0.0.0.0
+-}
 type Optic p source target a b = p a b -> p source target
 
 type Lens  source target a b = forall p . Strong p => Optic p source target a b
