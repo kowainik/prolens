@@ -33,11 +33,22 @@ module Prolens
     , (^.)
     , (.~)
     , (%~)
+
+      -- * Prisms
+      -- ** Prism types
+    , Prism
+    , Prism'
+
+      -- ** Prism functions
+    , prism
+    , prism'
+    , preview
     ) where
 
 
 import Control.Applicative (Const (..))
 import Data.Coerce (coerce)
+import Data.Monoid (First (..))
 
 
 {- |
@@ -118,6 +129,17 @@ instance Choice (->) where
         Right a -> Right $ ab a
         Left c  -> Left c
 
+instance (Applicative m) => Choice (Fun m) where
+    left :: Fun m a b -> Fun m (Either a c) (Either b c)
+    left (Fun amb)= Fun $ \eitherAc -> case eitherAc of
+        Left a  -> Left <$> amb a
+        Right c -> pure $ Right c
+
+    right :: Fun m a b -> Fun m (Either c a) (Either c b)
+    right (Fun amb)= Fun $ \eitherCa -> case eitherCa of
+        Right a -> Right <$> amb a
+        Left c  -> pure $ Left c
+
 class Strong p => Monoidal p where
     pappend :: p a b -> p c d -> p (a,c) (b,d)
     pempty :: p a a
@@ -185,3 +207,44 @@ infixr 4 %~
 (%~) :: Lens' source a -> (a -> a) -> source -> source
 (%~) = over
 {-# INLINE (%~) #-}
+
+-- Prisms
+
+type Prism  source target a b = forall p . Choice p => Optic p source target a b
+type Prism' source        a   = Prism source source a a
+
+newtype Forget r a b = Forget
+    { unForget :: a -> r
+    }
+
+instance Functor (Forget r x) where
+    fmap :: (a -> b) -> Forget r x a -> Forget r x b
+    fmap _ = coerce
+
+instance Profunctor (Forget r) where
+    dimap :: (a -> b) -> (c -> d) -> Forget r b c -> Forget r a d
+    dimap ab _cd (Forget br) = Forget (br . ab)
+
+instance Monoid r => Choice (Forget r) where
+    left :: Forget r a b -> Forget r (Either a c) (Either b c)
+    left (Forget ar) = Forget (either ar (const mempty))
+
+    right :: Forget r a b -> Forget r (Either c a) (Either c b)
+    right (Forget ar) = Forget (either (const mempty) ar)
+
+preview
+    :: (p ~ Forget (First a))
+    => Optic p source source a a -> source -> Maybe a
+preview paapss = getFirst . unForget (paapss (Forget (First . Just)))
+-- paapss :: Forget (First a) a a -> Forget (First a) source source
+-- paapss :: (a -> First a) -> source -> First a
+-- paapss :: (a -> Maybe a) -> source -> Maybe a
+
+prism :: (b -> target) -> (source -> Either target a) -> Prism source target a b
+-- prism :: (b -> target) -> (source -> Either target a) -> p a b -> p source target
+prism bTarget sEitherTargetA pab = dimap sEitherTargetA targetBtarget $ right pab
+  where
+    targetBtarget = either id bTarget
+
+prism' :: (a -> source) -> (source -> Maybe a) -> Prism' source a
+prism' aSource sourceMaybeA = prism aSource (\s -> maybe (Left s) Right $ sourceMaybeA s)
