@@ -1,5 +1,6 @@
 module Test.Data
-    ( Haskeller (..)
+    ( -- * Lenses
+      Haskeller (..)
     , nameL
     , knowledgeL
 
@@ -7,6 +8,13 @@ module Test.Data
     , syntaxL
 
     , me
+
+      -- * Prisms
+    , Grade (..)
+    , _Mark
+
+    , gradeMark
+    , gradeOther
 
       -- * Generators
     , genFun
@@ -19,7 +27,7 @@ module Test.Data
 
 import Test.Hspec.Hedgehog (MonadGen)
 
-import Prolens (Fun (..), Lens', lens)
+import Prolens (Fun (..), Lens', Prism', lens, prism')
 
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
@@ -63,6 +71,22 @@ knowledgeL = lens haskellerKnowledge (\h new -> h { haskellerKnowledge = new })
 syntaxL :: Lens' Knowledge Bool
 syntaxL = lens kSyntax (\k new -> k { kSyntax = new })
 {-# INLINE syntaxL #-}
+
+data Grade
+    = Mark Int
+    | Other String
+    deriving stock (Show, Eq)
+
+_Mark :: Prism' Grade Int
+_Mark = prism' Mark $ \case
+    Mark a -> Just a
+    _other -> Nothing
+
+gradeMark :: Grade
+gradeMark = Mark 5
+
+gradeOther :: Grade
+gradeOther = Other "Satisfactory"
 
 -- Generators
 
