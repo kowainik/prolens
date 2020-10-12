@@ -201,7 +201,7 @@ type Optic p source target a b = p a b -> p source target
 == Example
 
 To understand better how to use this library lets look at some simple example.
-Let's say we have the user data type in our system:
+Let's say we have the user and address data types in our system:
 
 >>> :{
 data Address = Address
@@ -219,6 +219,8 @@ data User = User
     } deriving (Show)
 :}
 
+We can easily get fields of the @User@ and @Address@ types, but setting values is inconvenient (especially for nested records). To solve this problem, we can use lenses — composable getters and setters. 'Lens' is a value, so we need to define lenses for fields of our data types first.
+
 To create the lens for the @userName@ field we can use 'lens' function and
 manually writing getter and setter function:
 
@@ -232,7 +234,8 @@ nameL = lens getter setter
     setter user newName = user {userName = newName}
 :}
 
-In this manner, we can create other lenses for our User data type.
+In this manner, we can create other lenses for our @User@ data type.
+Usually, lenses are one-liners, and we can define them easily using lambda-functions.
 
 >>> :{
 ageL :: Lens' User Int
@@ -244,10 +247,12 @@ addressL :: Lens' User Address
 addressL = lens userAddress (\u new -> u {userAddress = new})
 :}
 
+We want to have lenses for accessing @Adress@ fields inside @User@, so we want to have the following values:
+
 @
-countryL :: 'Lens'' User 'Text'
-cityL    :: 'Lens'' User 'Text'
-indexL   :: 'Lens'' User 'Text'
+countryL :: 'Lens'' User 'String'
+cityL    :: 'Lens'' User 'String'
+indexL   :: 'Lens'' User 'String'
 @
 
 /Note:/ here we are using composition of the lenses for @userAddress@ field. If we have
