@@ -61,15 +61,19 @@ common common-options
                        TypeApplications
                        ViewPatterns
 
+common common-test
+  import:              common-options
+  hs-source-dirs:      test
+  ghc-options:         -threaded
+
 library
   import:              common-options
   hs-source-dirs:      src
   exposed-modules:     Prolens
 
 test-suite prolens-test
-  import:              common-options
+  import:              common-test
   type:                exitcode-stdio-1.0
-  hs-source-dirs:      test
   main-is:             Spec.hs
 
   other-modules:       Test.Data
@@ -82,6 +86,11 @@ test-suite prolens-test
                      , hspec ^>= 2.7.4
                      , hspec-hedgehog
                      , inspection-testing ^>= 0.4
-  ghc-options:         -threaded
-                       -rtsopts
+  ghc-options:         -rtsopts
                        -with-rtsopts=-N
+
+test-suite doctest
+  import:              common-test
+  type:                exitcode-stdio-1.0
+  main-is:             Doctest.hs
+  build-depends:       doctest ^>= 0.17
