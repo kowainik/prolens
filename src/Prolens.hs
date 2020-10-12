@@ -255,7 +255,8 @@ cityL    :: 'Lens'' User 'String'
 indexL   :: 'Lens'' User 'String'
 @
 
-/Note:/ here we are using composition of the lenses for @userAddress@ field. If we have
+/Note:/ for lenses as @countryL@, @cityL@ etc., we are using composition of the
+lenses for the @userAddress@ field. If we have
 
 >>> :{
 addressCityL :: Lens' Address String
@@ -414,7 +415,7 @@ data Payload
 To create the prism for each constructor we can use 'prism'' function and
 manually writing getter and setter function:
 
-_NOTE:_ The naming convention for prisms is the following:
+/NOTE:/ The naming convention for prisms is the following:
 
 @
 _ConstructorName
@@ -422,14 +423,14 @@ _ConstructorName
 
 >>> :{
 _NamePayload :: Prism' Payload String
-_NamePayload = prism' setter getter
+_NamePayload = prism' construct match
   where
-    getter :: Payload -> Maybe String
-    getter p = case p of
+    match :: Payload -> Maybe String
+    match p = case p of
         NamePayload name -> Just name
         _otherPayload -> Nothing
-    setter :: String -> Payload
-    setter = NamePayload
+    construct :: String -> Payload
+    construct = NamePayload
 :}
 
 In this manner, we can create other prisms for our @Payload@ data type.

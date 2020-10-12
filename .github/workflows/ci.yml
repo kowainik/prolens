@@ -27,7 +27,7 @@ jobs:
           - os: windows-latest
             ghc: 8.8.4
           - os: windows-latest
-            ghc: 8.6.5
+            ghc: 8.10.2
 
     steps:
     - uses: actions/checkout@v2
