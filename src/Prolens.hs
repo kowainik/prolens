@@ -9,9 +9,14 @@ Maintainer: Kowainik <xrom.xkov@gmail.com>
 
 Profunctor based lightweight implementation of Lenses
 
-This module aims to provide a minimal implementation of 'Lens' and 'Prism' based
-on the 'Profunctor' typeclasses with all necessary functions and operators required
-for basic usage.
+The @prolens@ package is a Haskell library with a minimal and lightweight
+implementation of optics based on 'Profunctor's. __Optic__ is a high-level
+concept for values providing composable access to different parts of structures.
+
+"Prolens" provides the following optics:
+
+ * 'Lens' — composable getters and setters
+ * 'Prisms' — composable constructors and deconstructors
 
 == Usage
 
