@@ -797,8 +797,10 @@ type Traversal source target a b
 
 {- | Traverse a data structure using given 'Traversal'.
 
--- TODO: fix
--- >>> traverseOf eachPair putStrLn ("Hello", "World!")
+>>> traverseOf eachPair putStrLn ("Hello", "World!")
+Hello
+World!
+((),())
 
 @since 0.0.0.0
 -}
