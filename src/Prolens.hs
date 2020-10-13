@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-redundant-constraints #-}
+
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE TypeFamilies          #-}
@@ -76,6 +78,18 @@ module Prolens
     , prism
     , prism'
     , preview
+
+      -- * Traversals
+      -- ** Traversal types
+    , Traversal
+
+      -- ** Traversal functions
+    , traverseOf
+
+      -- ** Traversal implementations
+    , eachPair
+    , eachMaybe
+    , eachList
     ) where
 
 
@@ -552,3 +566,75 @@ prism bTarget sEitherTargetA pab = dimap sEitherTargetA targetBtarget $ right pa
 -}
 prism' :: (a -> source) -> (source -> Maybe a) -> Prism' source a
 prism' aSource sourceMaybeA = prism aSource (\s -> maybe (Left s) Right $ sourceMaybeA s)
+
+
+{- | Traversal
+-}
+type Traversal source target a b
+    = forall p
+    . (Choice p, Monoidal p)
+    => Optic p source target a b
+
+
+traverseOf
+    :: (Applicative f, p ~ Fun f)
+    => Optic p source target a b
+    -> (a -> f b)
+    -> (source -> f target)
+traverseOf pabPst aFb = unFun (pabPst (Fun aFb))
+-- pabPst :: Fun f a b -> Fun f source target
+-- pabPst :: (a -> f b) -> Fun f source target
+
+{- | 'Traversal' for a pair of same type elements.
+
+>>> over eachPair (+ 1) (3, 7)
+(4,8)
+
+@since 0.0.0.0
+-}
+eachPair :: Traversal (a, a) (b, b) a b
+eachPair pab = pappend pab pab
+
+{- | 'Traversal' for a 'Maybe'.
+
+>>> over eachMaybe (+ 1) (Just 3)
+Just 4
+>>> over eachMaybe (+ 1) Nothing
+Nothing
+
+@since 0.0.0.0
+-}
+eachMaybe :: Traversal (Maybe a) (Maybe b) a b
+eachMaybe pab = dimap maybeToEither eitherToMaybe (left pab)
+  where
+    maybeToEither :: Maybe a -> Either a ()
+    maybeToEither = \case
+        Just a -> Left a
+        Nothing -> Right ()
+
+    eitherToMaybe :: Either a () -> Maybe a
+    eitherToMaybe = \case
+        Left a -> Just a
+        Right () -> Nothing
+
+{- | 'Traversal' for lists.
+
+>>> over eachList (+ 1) [1..5]
+[2,3,4,5,6]
+>>> over eachList (+ 1) []
+[]
+
+@since 0.0.0.0
+-}
+eachList :: Traversal [a] [b] a b
+eachList pab = dimap listToEither eitherToList $ left $ pappend pab (eachList pab)
+  where
+    listToEither :: [a] -> Either (a, [a]) ()
+    listToEither = \case
+        [] -> Right ()
+        x:xs -> Left (x, xs)
+
+    eitherToList :: Either (a, [a]) () -> [a]
+    eitherToList = \case
+        Right () -> []
+        Left (x, xs) -> x:xs
