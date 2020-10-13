@@ -14,7 +14,8 @@ structures.
 Prolens provides the following optics:
 
 * __Lens__ — composable getters and setters
-* __Prisms__ — composable constructors and deconstructors
+* __Prism__ — composable constructors and deconstructors
+* __Traversal__ — composable data structures traversals
 
 ## Goals
 
@@ -91,7 +92,7 @@ will need to set it up with the three easy steps:
        }
 
    nameL :: Lens' User String
-   nameL = lens userName (\u new { u = userName = new })
+   nameL = lens userName (\u new -> u { userName = new })
 
    main :: IO ()
    main = putStrln $ view nameL (User "Johnny" 27)
