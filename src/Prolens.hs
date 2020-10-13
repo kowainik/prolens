@@ -69,6 +69,10 @@ module Prolens
     , (.~)
     , (%~)
 
+      -- ** Standard lenses
+    , fstL
+    , sndL
+
       -- * Prisms
       -- $prisms
       -- ** Prism types
@@ -80,6 +84,11 @@ module Prolens
     , prism'
     , preview
 
+      -- ** Standard Prisms
+    , _Just
+    , _Left
+    , _Right
+
       -- * Traversals
       -- ** Traversal types
     , Traversal
@@ -87,7 +96,7 @@ module Prolens
       -- ** Traversal functions
     , traverseOf
 
-      -- ** Traversal implementations
+      -- ** Standard traversals
     , eachPair
     , eachMaybe
     , eachList
@@ -413,6 +422,28 @@ infixr 4 %~
 (%~) = over
 {-# INLINE (%~) #-}
 
+{- | 'Lens'' for a tuple on the first argument.
+
+>>> view fstL (42, "str")
+42
+
+@since 0.0.0.0
+-}
+fstL :: Lens (a, c) (b, c) a b
+fstL = lens fst $ \(_, b) new -> (new, b)
+{-# INLINE fstL #-}
+
+{- | 'Lens'' for a tuple on the second argument.
+
+>>> view sndL (42, "Hello")
+"Hello"
+
+@since 0.0.0.0
+-}
+sndL :: Lens (x, a) (x, b) a b
+sndL = lens snd $ \(a, _) new -> (a, new)
+{-# INLINE sndL #-}
+
 {- $prisms
 Prisms work with sum types.
 
@@ -599,6 +630,55 @@ prism'
     -> Prism' source a
 prism' ctor match = prism ctor (\s -> maybe (Left s) Right $ match s)
 {-# INLINE prism' #-}
+
+{- | 'Prism' for a 'Just' of 'Maybe'.
+
+>>> preview _Just (Just 42)
+Just 42
+
+>>> preview _Just Nothing
+Nothing
+
+@since 0.0.0.0
+-}
+_Just :: Prism (Maybe a) (Maybe b) a b
+_Just = prism Just $ \case
+    Just a -> Right a
+    Nothing -> Left Nothing
+{-# INLINE _Just #-}
+
+
+{- | 'Prism' for a 'Left' of 'Either'.
+
+>>> preview _Left (Left 42)
+Just 42
+
+>>> preview _Left (Right "Hello")
+Nothing
+
+@since 0.0.0.0
+-}
+_Left :: Prism (Either a x) (Either b x) a b
+_Left = prism Left $ \case
+    Left l -> Right l
+    Right r -> Left $ Right r
+{-# INLINE _Left #-}
+
+{- | 'Prism' for a 'Left' of 'Either'.
+
+>>> preview _Right (Left 42)
+Nothing
+
+>>> preview _Right (Right "Hello")
+Just "Hello"
+
+@since 0.0.0.0
+-}
+_Right :: Prism (Either x a) (Either x b) a b
+_Right = prism Right $ \case
+    Right a -> Right a
+    Left x -> Left $ Left x
+{-# INLINE _Right #-}
 
 
 {- | Traversal
