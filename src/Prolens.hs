@@ -67,24 +67,20 @@ Here is a go-to table on how to use getter, setters and modifiers with different
 -}
 
 module Prolens
-    ( -- * Profunctors
-      -- $profunctors
-      -- ** Typeclasses and data types
+    ( -- * Profunctor typeclass
       Profunctor (..)
-    , Strong (..)
-    , Choice (..)
-    , Monoidal (..)
-    , Fun (..)
-    , Forget (..)
 
       -- * Optics
     , Optic
 
       -- * Lenses
       -- $lenses
+
       -- ** Lenses types
     , Lens
     , Lens'
+      -- ** Strong typeclass
+    , Strong (..)
 
       -- ** Lenses functions
     , set
@@ -103,9 +99,12 @@ module Prolens
 
       -- * Prisms
       -- $prisms
+
       -- ** Prism types
     , Prism
     , Prism'
+      -- ** Choice typeclass
+    , Choice (..)
 
       -- ** Prism functions
     , prism
@@ -118,8 +117,11 @@ module Prolens
     , _Right
 
       -- * Traversals
+
       -- ** Traversal types
     , Traversal
+      -- ** Monoidal typeclass
+    , Monoidal (..)
 
       -- ** Traversal functions
     , traverseOf
@@ -128,6 +130,10 @@ module Prolens
     , eachPair
     , eachMaybe
     , eachList
+
+      -- * Internal data types
+    , Forget (..)
+    , Fun (..)
     ) where
 
 import Control.Applicative (Const (..), liftA2)
