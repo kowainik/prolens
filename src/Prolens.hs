@@ -429,7 +429,7 @@ infixr 4 %~
 
 @since 0.0.0.0
 -}
-fstL :: Lens' (a, b) a
+fstL :: Lens (a, c) (b, c) a b
 fstL = lens fst $ \(_, b) new -> (new, b)
 {-# INLINE fstL #-}
 
