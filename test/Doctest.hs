@@ -6,8 +6,10 @@ import Test.DocTest (doctest)
 main :: IO ()
 main = doctest
     $ "-XLambdaCase"
-    : "-XTupleSections"
     : "-XInstanceSigs"
+    : "-XScopedTypeVariables"
+    : "-XTupleSections"
+    : "-XTypeApplications"
     :
     [ "src/Prolens.hs"
     ]
