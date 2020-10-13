@@ -50,6 +50,9 @@ The below table shows required constraints for each 'Optic':
 
 == Usage table: get, set, modify
 
+Here is a go-to table on how to use getter, setters and modifiers with different
+'Optic's.
+
 +-------------+------------------+--------------+------------------+------------------+-----------------+-----------------+
 |             | get              | get operator | set              | set operator     | modify          | modify operator |
 +=============+==================+==============+==================+==================+=================+=================+
