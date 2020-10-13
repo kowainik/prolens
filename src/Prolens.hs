@@ -398,7 +398,7 @@ type Lens' source a = Lens source source a a
 @since 0.0.0.0
 -}
 set :: (p ~ (->))
-    => Optic p source target a b  -- 'Optic' that can be lens
+    => Optic p source target a b  -- ^ 'Optic' that can be lens
     -> b  -- ^ Value to set
     -> source  -- ^ Object where we want to set value
     -> target  -- ^ Resulting object with @b@ set
@@ -776,7 +776,7 @@ type Traversal source target a b
 -}
 traverseOf
     :: (Applicative f, p ~ Fun f)
-    => Optic p source target a b  -- 'Optic' that can be traversal
+    => Optic p source target a b  -- ^ 'Optic' that can be a traversal
     -> (a -> f b)  -- ^ Traversing function
     -> source  -- ^ Data structure to traverse
     -> f target  -- ^ Traversing result
