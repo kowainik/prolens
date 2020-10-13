@@ -34,6 +34,14 @@ You should add the import of this module in the place of lenses usage:
 __import__ "Prolens"
 @
 
+== Creating your own optics
+
+We show in each section of this module how to create values of each
+kind of optics.
+
+⚠️ __The general crucial rule__ for achieving maximum performance:
+always add @\{\-\# INLINE ... \#\-\}@ pragmas to your optics.
+
 == Typeclasses table
 
 The below table shows required constraints for each 'Optic':
