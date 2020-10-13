@@ -111,9 +111,21 @@ import Data.Monoid (First (..))
 
 {- | The type @p@ is called 'Profunctor' and it means, that a value of
 type @p in out@ takes a value of type @in@ as an argument (input) and
-outputs a value of type @out@.
+outputs a value of type @out@. 'Profunctor' allows mapping of inputs
+and outputs.
 
-TODO: ASCII ART
+@
+          +----> Result input
+          |
+          |                                +--> Original profunctor
+          |      +-> Original input        |
+          +      +                         +
+dimap :: (in2 -> in1) -> (out1 -> out2) -> p in1 out1 -> p in2 out2
+                          +       +
+                          |       +-> Result output
+                          |
+                          +-> Original output
+@
 
 Speaking in terms of other abstractions, 'Profunctor' is
 'Data.Functor.Contravariant.Contravariant' in the first type argument
@@ -122,6 +134,19 @@ variable @out@).
 
 Moreover, @p in@ must have 'Functor' instance first to implement the
 'Profunctor' instance. This required using @QuantifiedConstraints@.
+
+@
+                         Contravariant <---+
+                                           |
+                                         +-+-+
+                                         +   +
+(forall a . Functor (p a)) => Profunctor p a b
+          +                              + +
+          |                              | |
+          +--> Quantified constraint     +++
+                                          |
+                              Functor  <--+
+@
 
 Instances of 'Profunctor' should satisfy the following laws:
 
@@ -271,7 +296,21 @@ instance (Applicative m) => Monoidal (Fun m) where
 value of type @p a b@) and returns a connection from @source@ to
 @target@ (represented as a value of type @p source target@).
 
-TODO: ASCII art
+@
+           +---> Profunctor
+           |
+           | +----> Final input
+           | |
+           | |      +-> Final output
+           | |      |
+           + +      +
+type Optic p source target a b
+                           + +
+                           | |
+            Given input <--+ |
+                             |
+        Given output <-------+
+@
 
 @since 0.0.0.0
 -}
@@ -395,7 +434,19 @@ User {userName = "John", userAge = 43, userAddress = Address {addressCountry = "
 
 'Lens' is an @'Optic' p@ with the 'Strong' constraint on the @p@ type variable.
 
-TODO: ASCII art
+@
+          +---> Current object
+          |
+          |      +-> Final object
+          |      |
+          +      +
+type Lens source target a b
+                        + +
+                        | |
+       Current field <--+ |
+                          |
+      Final field <-------+
+@
 
 @since 0.0.0.0
 -}
@@ -622,7 +673,19 @@ AddressPayload (Address {addressCountry = "UK", addressCity = "Bristol"})
 'Prism' is an @'Optic' p@ with 'Choice' constraint on the @p@ type
 variable.
 
-TODO: ASCII art
+@
+                   +---> Current object
+                   |
+                   |      +-> Final object
+                   |      |
+                   +      +
+        type Prism source target a b
+                                 + +
+                                 | |
+ Field in current constructor <--+ |
+                                   |
+Field in final constructor <-------+
+@
 
 @since 0.0.0.0
 -}
@@ -787,6 +850,20 @@ a data structure.
 
 'Traversal' is an @'Optic' p@ with the 'Choice' and 'Monoidal'
 constraints on the @p@ type variable.
+
+@
+               +---> Current collection
+               |
+               |      +-> Final collection
+               |      |
+               +      +
+type Traversal source target a b
+                             + +
+                             | |
+          Current element <--+ |
+                               |
+         Final element <-------+
+@
 
 @since 0.0.0.0
 -}
