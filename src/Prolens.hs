@@ -440,7 +440,7 @@ fstL = lens fst $ \(_, b) new -> (new, b)
 
 @since 0.0.0.0
 -}
-sndL :: Lens' (a, b) b
+sndL :: Lens (x, a) (x, b) a b
 sndL = lens snd $ \(a, _) new -> (a, new)
 {-# INLINE sndL #-}
 
@@ -641,8 +641,10 @@ Nothing
 
 @since 0.0.0.0
 -}
-_Just :: Prism' (Maybe a) a
-_Just = prism' Just id
+_Just :: Prism (Maybe a) (Maybe b) a b
+_Just = prism Just $ \case
+    Just a -> Right a
+    Nothing -> Left Nothing
 {-# INLINE _Just #-}
 
 
@@ -656,10 +658,10 @@ Nothing
 
 @since 0.0.0.0
 -}
-_Left :: Prism' (Either a b) a
-_Left = prism' Left $ \case
-    Left a -> Just a
-    Right _ -> Nothing
+_Left :: Prism (Either a x) (Either b x) a b
+_Left = prism Left $ \case
+    Left l -> Right l
+    Right r -> Left $ Right r
 {-# INLINE _Left #-}
 
 {- | 'Prism' for a 'Left' of 'Either'.
@@ -672,10 +674,10 @@ Just "Hello"
 
 @since 0.0.0.0
 -}
-_Right :: Prism' (Either a b) b
-_Right = prism' Right $ \case
-    Right a -> Just a
-    Left _ -> Nothing
+_Right :: Prism (Either x a) (Either x b) a b
+_Right = prism Right $ \case
+    Right a -> Right a
+    Left x -> Left $ Left x
 {-# INLINE _Right #-}
 
 
