@@ -9,16 +9,15 @@ Copyright: (c) 2020 Kowainik
 SPDX-License-Identifier: MPL-2.0
 Maintainer: Kowainik <xrom.xkov@gmail.com>
 
-Profunctor based lightweight implementation of Lenses
-
 The @prolens@ package is a Haskell library with a minimal and lightweight
-implementation of optics based on 'Profunctor's. __Optic__ is a high-level
-concept for values providing composable access to different parts of structures.
+implementation of optics based on 'Profunctor's. __'Optic'__ is a high-level
+concept for values that provide composable access to different parts of structures.
 
-"Prolens" provides the following optics:
+"Prolens" implements the following optics:
 
  * 'Lens' — composable getters and setters
- * 'Prisms' — composable constructors and deconstructors
+ * 'Prism' — composable constructors and deconstructors
+ * 'Traversal' — composable data structures visitors
 
 == Usage
 
@@ -32,10 +31,10 @@ build-depends: prolens ^>= 0.0.0.0
 You should add the import of this module in the place of lenses usage:
 
 @
-__import__ Prolens
+__import__ "Prolens"
 @
 
-
+@since 0.0.0.0
 -}
 
 module Prolens
@@ -102,7 +101,6 @@ module Prolens
     , eachList
     ) where
 
-
 import Control.Applicative (Const (..), liftA2)
 import Data.Coerce (coerce)
 import Data.Monoid (First (..))
@@ -111,7 +109,19 @@ import Data.Monoid (First (..))
 -- >>> import Data.Function ((&))
 
 
-{- |
+{- | The type @p@ is called 'Profunctor' and it means, that a value of
+type @p in out@ takes a value of type @in@ as an argument (input) and
+outputs a value of type @out@.
+
+TODO: ASCII ART
+
+Speaking in terms of other abstractions, 'Profunctor' is
+'Data.Functor.Contravariant.Contravariant' in the first type argument
+(type variable @in@) and 'Functor' in the second type argument (type
+variable @out@).
+
+Moreover, @p in@ must have 'Functor' instance first to implement the
+'Profunctor' instance. This required using @QuantifiedConstraints@.
 
 Instances of 'Profunctor' should satisfy the following laws:
 
@@ -122,7 +132,11 @@ Instances of 'Profunctor' should satisfy the following laws:
 -}
 -- type Profunctor :: (Type -> Type -> Type) -> Constraint
 class (forall a . Functor (p a)) => Profunctor p where
-    dimap :: (in2 -> in1) -> (out1 -> out2) -> p in1 out1 -> p in2 out2
+    dimap
+        :: (in2 -> in1)  -- ^ Map input
+        -> (out1 -> out2)  -- ^ Map output
+        -> p in1 out1  -- ^ Take @in1@ as input and return @out1@
+        -> p in2 out2  -- ^ Take @in2@ as input and return @out2@
 
 -- | @since 0.0.0.0
 instance Profunctor (->) where
@@ -130,7 +144,10 @@ instance Profunctor (->) where
     dimap in21 out12 f = out12 . f . in21
     {-# INLINE dimap #-}
 
--- | @since 0.0.0.0
+{- | @'Fun' m a b@ is a wrapper for function @a -> m b@.
+
+@since 0.0.0.0
+-}
 newtype Fun m a b = Fun
     { unFun :: a -> m b
     }
@@ -147,15 +164,20 @@ instance Functor m => Profunctor (Fun m) where
     dimap in21 out12 (Fun f) = Fun (fmap out12 . f . in21)
     {-# INLINE dimap #-}
 
-{-
-type Lens  s t a b = forall f. Functor f => (a -> f b) -> s -> f t
-type Lens' s   a   = forall f. Functor f => (a -> f a) -> s -> f s
+{- | 'Strong' is a 'Profunctor' that can be lifted to take a pair as
+an input and return a pair.
 
+The second element of a pair (variable of type @c@) can be of any
+type, and you can decide what type it should be. This is convenient
+for implementing various functions. E.g. 'lens' uses this fact.
+
+@since 0.0.0.0
 -}
 class Profunctor p => Strong p where
     first  :: p a b -> p (a, c) (b, c)
     second :: p a b -> p (c, a) (c, b)
 
+-- | @since 0.0.0.0
 instance Strong (->) where
     first :: (a -> b) -> (a, c) -> (b, c)
     first ab (a, c) = (ab a, c)
@@ -165,6 +187,7 @@ instance Strong (->) where
     second ab (c, a) = (c, ab a)
     {-# INLINE second #-}
 
+-- | @since 0.0.0.0
 instance (Functor m) => Strong (Fun m) where
     first :: Fun m a b -> Fun m (a, c) (b, c)
     first (Fun amb) = Fun (\(a, c) -> fmap (, c) (amb a))
@@ -174,10 +197,20 @@ instance (Functor m) => Strong (Fun m) where
     second (Fun amb) = Fun (\(c, a) -> fmap (c,) (amb a))
     {-# INLINE second #-}
 
+{- | 'Choice' is a 'Profunctor' that can be lifted to work with
+'Either' given input or some other value.
+
+The other element of 'Either' (variable of type @c@) can be of any
+type, and you can decide what type it should be. This is convenient
+for implementing various functions. E.g. 'prism' uses this fact.
+
+@since 0.0.0.0
+-}
 class Profunctor p => Choice p where
     left  :: p a b -> p (Either a c) (Either b c)
     right :: p a b -> p (Either c a) (Either c b)
 
+-- | @since 0.0.0.0
 instance Choice (->) where
     left  :: (a -> b) -> Either a c -> Either b c
     left ab = \case
@@ -191,6 +224,7 @@ instance Choice (->) where
         Left c  -> Left c
     {-# INLINE right #-}
 
+-- | @since 0.0.0.0
 instance (Applicative m) => Choice (Fun m) where
     left :: Fun m a b -> Fun m (Either a c) (Either b c)
     left (Fun amb)= Fun $ \eitherAc -> case eitherAc of
@@ -204,10 +238,16 @@ instance (Applicative m) => Choice (Fun m) where
         Left c  -> pure $ Left c
     {-# INLINE right #-}
 
+{- | 'Monoidal' is 'Strong' 'Profunctor' that can be appended. It is
+similar to 'Monoid's but for higher-kinded types.
+
+@since 0.0.0.0
+-}
 class Strong p => Monoidal p where
     pappend :: p a b -> p c d -> p (a, c) (b, d)
     pempty :: p a a
 
+-- | @since 0.0.0.0
 instance Monoidal (->) where
     pappend :: (a -> b) -> (c -> d) -> (a, c) -> (b, d)
     pappend ab cd (a, c) = (ab a, cd c)
@@ -217,6 +257,7 @@ instance Monoidal (->) where
     pempty = id
     {-# INLINE pempty #-}
 
+-- | @since 0.0.0.0
 instance (Applicative m) => Monoidal (Fun m) where
     pappend :: Fun m a b -> Fun m c d -> Fun m (a, c) (b, d)
     pappend (Fun amb) (Fun cmd) = Fun (\(a, c) -> liftA2 (,) (amb a) (cmd c))
@@ -229,6 +270,8 @@ instance (Applicative m) => Monoidal (Fun m) where
 {- | 'Optic' takes a connection from @a@ to @b@ (represented as a
 value of type @p a b@) and returns a connection from @source@ to
 @target@ (represented as a value of type @p source target@).
+
+TODO: ASCII art
 
 @since 0.0.0.0
 -}
@@ -258,7 +301,11 @@ data User = User
     } deriving (Show)
 :}
 
-We can easily get fields of the @User@ and @Address@ types, but setting values is inconvenient (especially for nested records). To solve this problem, we can use lenses — composable getters and setters. 'Lens' is a value, so we need to define lenses for fields of our data types first.
+We can easily get fields of the @User@ and @Address@ types, but
+setting values is inconvenient (especially for nested records). To
+solve this problem, we can use lenses — composable getters and
+setters. 'Lens' is a value, so we need to define lenses for fields of
+our data types first.
 
 To create the lens for the @userName@ field we can use 'lens' function and
 manually writing getter and setter function:
@@ -344,11 +391,15 @@ User {userName = "John", userAge = 43, userAddress = Address {addressCountry = "
 User {userName = "John", userAge = 43, userAddress = Address {addressCountry = "UK", addressCity = "London", addressIndex = "XXX"}}
 -}
 
-{- | Lenses
+{- | 'Lens' represents composable getters and setters.
+
+'Lens' is an @'Optic' p@ with the 'Strong' constraint on the @p@ type variable.
+
+TODO: ASCII art
 
 @since 0.0.0.0
 -}
-type Lens  source target a b = forall p . Strong p => Optic p source target a b
+type Lens source target a b = forall p . Strong p => Optic p source target a b
 
 {- | The monomorphic lenses which don't change the type of the container (or of
 the value inside). It has a 'Strong' constraint, and it can be used whenever a
@@ -357,16 +408,21 @@ getter or a setter is needed.
   * @a@ is the type of the value inside of structure
   * @source@ is the type of the whole structure
 
+For most use-cases it's enought to use this 'Lens'' instead of more general 'Lens'.
+
 @since 0.0.0.0
 -}
-type Lens' source        a   = Lens source source a a
+type Lens' source a = Lens source source a a
 
 {- | Sets the given value to the structure using a setter.
 
 @since 0.0.0.0
 -}
 set :: (p ~ (->))
-    => Optic p source target a b -> b -> source -> target
+    => Optic p source target a b  -- ^ 'Optic' that can be lens
+    -> b  -- ^ Value to set
+    -> source  -- ^ Object where we want to set value
+    -> target  -- ^ Resulting object with @b@ set
 set abst = abst . const
 {-# INLINE set #-}
 
@@ -376,7 +432,10 @@ set abst = abst . const
 -}
 over
     :: (p ~ (->))
-    => Optic p source target a b -> (a -> b) -> source -> target
+    => Optic p source target a b  -- ^ 'Optic' that can be lens
+    -> (a -> b)  -- ^ Field modification function
+    -> source  -- ^ Object where we want to set value
+    -> target  -- ^ Resulting object with the modified field
 over = id
 {-# INLINE over #-}
 
@@ -386,7 +445,9 @@ over = id
 -}
 view
     :: (p ~ Fun (Const a))
-    => Optic p source target a b -> (source -> a)
+    => Optic p source target a b  -- ^ 'Optic' that can be lens
+    -> source  -- ^ Object from which we want to get value
+    -> a  -- ^ Field of @source@
 view opt = coerce (opt (Fun Const))
 {-# INLINE view #-}
 -- view opt = getConst . unFun (opt (Fun Const))
@@ -556,17 +617,26 @@ payloadAddress = AddressPayload address
 AddressPayload (Address {addressCountry = "UK", addressCity = "Bristol"})
 -}
 
-{- |
+{- | 'Prism' represents composable constructors and deconstructors.
+
+'Prism' is an @'Optic' p@ with 'Choice' constraint on the @p@ type
+variable.
+
+TODO: ASCII art
 
 @since 0.0.0.0
 -}
-type Prism  source target a b = forall p . Choice p => Optic p source target a b
+type Prism source target a b = forall p . Choice p => Optic p source target a b
 
-{- |
+{- | The monomorphic prisms which don't change the type of the container (or of
+the value inside).
+
+  * @a@ is the value inside the particular constructor
+  * @source@ is some sum type
 
 @since 0.0.0.0
 -}
-type Prism' source        a   = Prism source source a a
+type Prism' source a = Prism source source a a
 
 {- | Newtype around function @a -> r@. It's called /forget/ because it
 forgets about its last type variable.
@@ -618,14 +688,16 @@ instance (Monoid r) => Monoidal (Forget r) where
     pempty = Forget (const mempty)
     {-# INLINE pempty #-}
 
-{- |
+{- | Match a value from @source@ type.
 
 @since 0.0.0.0
 -}
 preview
     :: forall a source p
     .  (p ~ Forget (First a))
-    => Optic p source source a a -> source -> Maybe a
+    => Optic p source source a a  -- ^ 'Optic' that can be prism
+    -> source  -- ^ Object (possible sum type)
+    -> Maybe a  -- ^ Value of type @a@ from a specific constructor
 preview paapss = coerce (paapss wrap)
   where
     wrap :: Forget (First a) a a
@@ -672,7 +744,7 @@ Nothing
 -}
 _Just :: Prism (Maybe a) (Maybe b) a b
 _Just = prism Just $ \case
-    Just a -> Right a
+    Just a  -> Right a
     Nothing -> Left Nothing
 {-# INLINE _Just #-}
 
@@ -689,7 +761,7 @@ Nothing
 -}
 _Left :: Prism (Either a x) (Either b x) a b
 _Left = prism Left $ \case
-    Left l -> Right l
+    Left l  -> Right l
     Right r -> Left $ Right r
 {-# INLINE _Left #-}
 
@@ -706,23 +778,38 @@ Just "Hello"
 _Right :: Prism (Either x a) (Either x b) a b
 _Right = prism Right $ \case
     Right a -> Right a
-    Left x -> Left $ Left x
+    Left x  -> Left $ Left x
 {-# INLINE _Right #-}
 
 
-{- | Traversal
+{- | 'Traversal' provides composable ways to visit different parts of
+a data structure.
+
+'Traversal' is an @'Optic' p@ with the 'Choice' and 'Monoidal'
+constraints on the @p@ type variable.
+
+@since 0.0.0.0
 -}
 type Traversal source target a b
     = forall p
     . (Choice p, Monoidal p)
     => Optic p source target a b
 
+{- | Traverse a data structure using given 'Traversal'.
 
+>>> traverseOf eachPair putStrLn ("Hello", "World!")
+Hello
+World!
+((),())
+
+@since 0.0.0.0
+-}
 traverseOf
     :: (Applicative f, p ~ Fun f)
-    => Optic p source target a b
-    -> (a -> f b)
-    -> (source -> f target)
+    => Optic p source target a b  -- ^ 'Optic' that can be a traversal
+    -> (a -> f b)  -- ^ Traversing function
+    -> source  -- ^ Data structure to traverse
+    -> f target  -- ^ Traversing result
 traverseOf pabPst aFb = unFun (pabPst (Fun aFb))
 -- pabPst :: Fun f a b -> Fun f source target
 -- pabPst :: (a -> f b) -> Fun f source target
