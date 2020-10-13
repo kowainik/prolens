@@ -81,6 +81,7 @@ _Mark :: Prism' Grade Int
 _Mark = prism' Mark $ \case
     Mark a -> Just a
     _other -> Nothing
+{-# INLINE _Mark #-}
 
 gradeMark :: Grade
 gradeMark = Mark 5

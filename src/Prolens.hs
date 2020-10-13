@@ -47,6 +47,7 @@ module Prolens
     , Choice (..)
     , Monoidal (..)
     , Fun (..)
+    , Forget (..)
 
       -- * Optics
     , Optic
@@ -165,7 +166,7 @@ instance (Functor m) => Strong (Fun m) where
     {-# INLINE second #-}
 
 class Profunctor p => Choice p where
-    left :: p a b -> p (Either a c) (Either b c)
+    left  :: p a b -> p (Either a c) (Either b c)
     right :: p a b -> p (Either c a) (Either c b)
 
 instance Choice (->) where
@@ -173,22 +174,26 @@ instance Choice (->) where
     left ab = \case
         Left a  -> Left $ ab a
         Right c -> Right c
+    {-# INLINE left #-}
 
     right :: (a -> b) -> Either c a -> Either c b
     right ab = \case
         Right a -> Right $ ab a
         Left c  -> Left c
+    {-# INLINE right #-}
 
 instance (Applicative m) => Choice (Fun m) where
     left :: Fun m a b -> Fun m (Either a c) (Either b c)
     left (Fun amb)= Fun $ \eitherAc -> case eitherAc of
         Left a  -> Left <$> amb a
         Right c -> pure $ Right c
+    {-# INLINE left #-}
 
     right :: Fun m a b -> Fun m (Either c a) (Either c b)
     right (Fun amb)= Fun $ \eitherCa -> case eitherCa of
         Right a -> Right <$> amb a
         Left c  -> pure $ Left c
+    {-# INLINE right #-}
 
 class Strong p => Monoidal p where
     pappend :: p a b -> p c d -> p (a,c) (b,d)
@@ -197,9 +202,11 @@ class Strong p => Monoidal p where
 instance Monoidal (->) where
     pappend :: (a -> b) -> (c -> d) -> (a,c) -> (b,d)
     pappend ab cd (a, c) = (ab a, cd c)
+    {-# INLINE pappend #-}
 
     pempty :: a -> a
     pempty = id
+    {-# INLINE pempty #-}
 
 {- | 'Optic' takes a connection from @a@ to @b@ (represented as a
 value of type @p a b@) and returns a connection from @source@ to
@@ -365,17 +372,19 @@ view
 view opt = coerce (opt (Fun Const))
 {-# INLINE view #-}
 -- view opt = getConst . unFun (opt (Fun Const))
-    -- opt :: Fun (Const a) a b -> Fun (Const a) s t
-    -- opt :: (a -> Const a b) -> ( s -> Const a t)
+-- opt :: Fun (Const a) a b -> Fun (Const a) s t
+-- opt :: (a -> Const a b) -> ( s -> Const a t)
 
 {- | Creates 'Lens' from the getter and setter.
 
 @since 0.0.0.0
 -}
-lens :: (source -> a) -> (source -> b -> target) -> Lens source target a b
-lens sa sbt = dimap (\s -> (s, sa s)) (uncurry sbt) . second
+lens
+    :: (source -> a)  -- ^ Getter
+    -> (source -> b -> target)  -- ^ Setter
+    -> Lens source target a b
+lens getter setter = dimap (\s -> (s, getter s)) (uncurry setter) . second
 {-# INLINE lens #-}
-
 
 {- | The operator form of 'view' with the arguments flipped.
 
@@ -519,53 +528,77 @@ type Prism  source target a b = forall p . Choice p => Optic p source target a b
 -}
 type Prism' source        a   = Prism source source a a
 
+{- | Newtype around function @a -> r@. It's called /forget/ because it
+forgets about its last type variable.
+
+@since 0.0.0.0
+-}
 newtype Forget r a b = Forget
     { unForget :: a -> r
     }
 
+-- | @since 0.0.0.0
 instance Functor (Forget r x) where
     fmap :: (a -> b) -> Forget r x a -> Forget r x b
     fmap _ = coerce
 
+-- | @since 0.0.0.0
 instance Profunctor (Forget r) where
     dimap :: (a -> b) -> (c -> d) -> Forget r b c -> Forget r a d
     dimap ab _cd (Forget br) = Forget (br . ab)
+    {-# INLINE dimap #-}
 
+-- | @since 0.0.0.0
 instance Monoid r => Choice (Forget r) where
     left :: Forget r a b -> Forget r (Either a c) (Either b c)
     left (Forget ar) = Forget (either ar (const mempty))
+    {-# INLINE left #-}
 
     right :: Forget r a b -> Forget r (Either c a) (Either c b)
     right (Forget ar) = Forget (either (const mempty) ar)
+    {-# INLINE right #-}
 
 {- |
 
 @since 0.0.0.0
 -}
 preview
-    :: (p ~ Forget (First a))
+    :: forall a source p
+    .  (p ~ Forget (First a))
     => Optic p source source a a -> source -> Maybe a
-preview paapss = getFirst . unForget (paapss (Forget (First . Just)))
+preview paapss = coerce (paapss wrap)
+  where
+    wrap :: Forget (First a) a a
+    wrap = coerce @(a -> Maybe a) @(Forget (First a) a a) Just
+    {-# INLINE wrap #-}
+{-# INLINE preview #-}
+-- preview paapss = getFirst . unForget (paapss (Forget (First . Just)))
 -- paapss :: Forget (First a) a a -> Forget (First a) source source
 -- paapss :: (a -> First a) -> source -> First a
 -- paapss :: (a -> Maybe a) -> source -> Maybe a
 
-{- |
+{- | Create 'Prism' from constructor and matching function.
 
 @since 0.0.0.0
 -}
-prism :: (b -> target) -> (source -> Either target a) -> Prism source target a b
+prism
+    :: (b -> target)  -- ^ Constructor
+    -> (source -> Either target a)  -- ^ Matching function
+    -> Prism source target a b
 -- prism :: (b -> target) -> (source -> Either target a) -> p a b -> p source target
-prism bTarget sEitherTargetA pab = dimap sEitherTargetA targetBtarget $ right pab
-  where
-    targetBtarget = either id bTarget
+prism ctor match = dimap match (either id ctor) . right
+{-# INLINE prism #-}
 
-{- |
+{- | Create monomorphic 'Prism'' from constructor and matching function.
 
 @since 0.0.0.0
 -}
-prism' :: (a -> source) -> (source -> Maybe a) -> Prism' source a
-prism' aSource sourceMaybeA = prism aSource (\s -> maybe (Left s) Right $ sourceMaybeA s)
+prism'
+    :: (a -> source)  -- ^ Constructor
+    -> (source -> Maybe a)  -- ^ Matching function
+    -> Prism' source a
+prism' ctor match = prism ctor (\s -> maybe (Left s) Right $ match s)
+{-# INLINE prism' #-}
 
 
 {- | Traversal
@@ -609,12 +642,12 @@ eachMaybe pab = dimap maybeToEither eitherToMaybe (left pab)
   where
     maybeToEither :: Maybe a -> Either a ()
     maybeToEither = \case
-        Just a -> Left a
+        Just a  -> Left a
         Nothing -> Right ()
 
     eitherToMaybe :: Either a () -> Maybe a
     eitherToMaybe = \case
-        Left a -> Just a
+        Left a   -> Just a
         Right () -> Nothing
 
 {- | 'Traversal' for lists.
@@ -631,10 +664,10 @@ eachList pab = dimap listToEither eitherToList $ left $ pappend pab (eachList pa
   where
     listToEither :: [a] -> Either (a, [a]) ()
     listToEither = \case
-        [] -> Right ()
+        []   -> Right ()
         x:xs -> Left (x, xs)
 
     eitherToList :: Either (a, [a]) () -> [a]
     eitherToList = \case
-        Right () -> []
+        Right ()     -> []
         Left (x, xs) -> x:xs

@@ -6,14 +6,14 @@ getters and update syntax.
 -}
 
 module Test.Prolens.Inspection
-    ( inspectionSpec
+    ( inspectionSpecs
     ) where
 
-import Test.Hspec (Spec, describe, it, shouldSatisfy)
+import Test.Hspec (Spec, describe, it, shouldSatisfy, xit)
 import Test.Inspection (Result (..), hasNoTypeClasses, inspectTest, (===))
 
-import Prolens (set, view)
-import Test.Data (Haskeller (..), Knowledge (..), knowledgeL, nameL, syntaxL)
+import Prolens (preview, set, view)
+import Test.Data (Grade (..), Haskeller (..), Knowledge (..), _Mark, knowledgeL, nameL, syntaxL)
 
 
 setNameViaLens :: Haskeller -> Haskeller
@@ -40,12 +40,13 @@ getSyntaxViaLens = view (knowledgeL . syntaxL)
 getSyntaxManually :: Haskeller -> Bool
 getSyntaxManually (Haskeller _ _ (Knowledge syntax _ _ _ _)) = syntax
 
-inspectionSpec :: Spec
-inspectionSpec = describe "Performance Inspection Testing" -- $ do
-    lensSpec
+inspectionSpecs :: Spec
+inspectionSpecs = describe "Performance Inspection Testing" $ do
+    lensSpecs
+    prismSpecs
 
-lensSpec :: Spec
-lensSpec = describe "Lens" $ do
+lensSpecs :: Spec
+lensSpecs = describe "Lens" $ do
     describe "set" $ do
         it "setting single via lens is efficient as manual record update" $
             $(inspectTest $ 'setNameViaLens === 'setNameManually) `shouldSatisfy` isSuccess
@@ -64,6 +65,20 @@ lensSpec = describe "Lens" $ do
             $(inspectTest $ 'getSyntaxViaLens === 'getSyntaxManually) `shouldSatisfy` isSuccess
         it "getting composition via lens doesn't have intermediate typeclasses" $
             $(inspectTest $ hasNoTypeClasses 'getSyntaxViaLens) `shouldSatisfy` isSuccess
+
+matchMarkPrism :: Grade -> Maybe Int
+matchMarkPrism = preview _Mark
+
+matchMarkManual :: Grade -> Maybe Int
+matchMarkManual grade = case grade of
+    Mark n -> Just n
+    _other -> Nothing
+
+prismSpecs :: Spec
+prismSpecs = describe "Prism" $ do
+    describe "preview" $ do
+        xit "preview _Ctor x ≡ case (Ctor _) of" $
+            $(inspectTest $ 'matchMarkPrism === 'matchMarkManual) `shouldSatisfy` isSuccess
 
 -- Helper functions
 
