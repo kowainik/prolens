@@ -1,15 +1,18 @@
 cabal-version:       2.4
 name:                prolens
 version:             0.0.0.0
-synopsis:            Profunctor based lightweight implementation of Lenses
+synopsis:            Profunctor-based lightweight implementation of optics
 description:
-    Profunctor based lightweight implementation of Lenses.
-    See [README.md](https://github.com/kowainik/prolens#prolens) for more details.
+    Lightweight and performance implementation of optics — lenses, prisms, traversals.
+    .
+    The library uses hardcore abstractions internally, but provides
+    beginner-friendly, composable and convenient interface for working
+    with data structures.
 homepage:            https://github.com/kowainik/prolens
 bug-reports:         https://github.com/kowainik/prolens/issues
 license:             MPL-2.0
 license-file:        LICENSE
-author:              Kowainik
+author:              Veronika Romashkina, Dmitrii Kovanikov
 maintainer:          Kowainik <xrom.xkov@gmail.com>
 copyright:           2020 Kowainik
 category:            Data, Optics, Lenses

@@ -8,14 +8,14 @@
 
 The `prolens` package is a Haskell library with a __minimal__ and
 __lightweight__ implementation of _optics_. __Optic__ is a high-level
-concept for values providing _composable_ access to different parts of
+concept for values that provide _composable_ access to different parts of
 structures.
 
-Prolens provides the following optics:
+Prolens implements the following optics:
 
 * __Lens__ — composable getters and setters
 * __Prism__ — composable constructors and deconstructors
-* __Traversal__ — composable data structures traversals
+* __Traversal__ — composable data structures visitors
 
 ## Goals
 

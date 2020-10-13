@@ -9,17 +9,15 @@ Copyright: (c) 2020 Kowainik
 SPDX-License-Identifier: MPL-2.0
 Maintainer: Kowainik <xrom.xkov@gmail.com>
 
-Profunctor based lightweight implementation of Lenses
-
 The @prolens@ package is a Haskell library with a minimal and lightweight
-implementation of optics based on 'Profunctor's. __Optic__ is a high-level
-concept for values providing composable access to different parts of structures.
+implementation of optics based on 'Profunctor's. __'Optic'__ is a high-level
+concept for values that provide composable access to different parts of structures.
 
-"Prolens" provides the following optics:
+"Prolens" implements the following optics:
 
  * 'Lens' — composable getters and setters
- * 'Prisms' — composable constructors and deconstructors
- * 'Traversal' — composable data structures traversals
+ * 'Prism' — composable constructors and deconstructors
+ * 'Traversal' — composable data structures visitors
 
 == Usage
 
@@ -33,7 +31,7 @@ build-depends: prolens ^>= 0.0.0.0
 You should add the import of this module in the place of lenses usage:
 
 @
-__import__ Prolens
+__import__ "Prolens"
 @
 
 @since 0.0.0.0
@@ -111,13 +109,19 @@ import Data.Monoid (First (..))
 -- >>> import Data.Function ((&))
 
 
-{- | 'Profunctor' @p in out@ takes values of type @in@ as arguments
-(inputs) and outputs values of type @out@.
+{- | The type @p@ is called 'Profunctor' and it means, that a value of
+type @p in out@ takes a value of type @in@ as an argument (input) and
+outputs a value of type @out@.
+
+TODO: ASCII ART
 
 Speaking in terms of other abstractions, 'Profunctor' is
 'Data.Functor.Contravariant.Contravariant' in the first type argument
 (type variable @in@) and 'Functor' in the second type argument (type
 variable @out@).
+
+Moreover, @p in@ must have 'Functor' instance first to implement the
+'Profunctor' instance. This required using @QuantifiedConstraints@.
 
 Instances of 'Profunctor' should satisfy the following laws:
 
@@ -128,7 +132,11 @@ Instances of 'Profunctor' should satisfy the following laws:
 -}
 -- type Profunctor :: (Type -> Type -> Type) -> Constraint
 class (forall a . Functor (p a)) => Profunctor p where
-    dimap :: (in2 -> in1) -> (out1 -> out2) -> p in1 out1 -> p in2 out2
+    dimap
+        :: (in2 -> in1)  -- ^ Map input
+        -> (out1 -> out2)  -- ^ Map output
+        -> p in1 out1  -- ^ Take @in1@ as input and return @out1@
+        -> p in2 out2  -- ^ Take @in2@ as input and return @out2@
 
 -- | @since 0.0.0.0
 instance Profunctor (->) where
@@ -136,7 +144,10 @@ instance Profunctor (->) where
     dimap in21 out12 f = out12 . f . in21
     {-# INLINE dimap #-}
 
--- | @since 0.0.0.0
+{- | @'Fun' m a b@ is a wrapper for function @a -> m b@.
+
+@since 0.0.0.0
+-}
 newtype Fun m a b = Fun
     { unFun :: a -> m b
     }
@@ -155,6 +166,10 @@ instance Functor m => Profunctor (Fun m) where
 
 {- | 'Strong' is a 'Profunctor' that can be lifted to take a pair as
 an input and return a pair.
+
+The second element of a pair (variable of type @c@) can be of any
+type, and you can decide what type it should be. This is convenient
+for implementing various functions. E.g. 'lens' uses this fact.
 
 @since 0.0.0.0
 -}
@@ -184,6 +199,10 @@ instance (Functor m) => Strong (Fun m) where
 
 {- | 'Choice' is a 'Profunctor' that can be lifted to work with
 'Either' given input or some other value.
+
+The other element of 'Either' (variable of type @c@) can be of any
+type, and you can decide what type it should be. This is convenient
+for implementing various functions. E.g. 'prism' uses this fact.
 
 @since 0.0.0.0
 -}
@@ -372,7 +391,9 @@ User {userName = "John", userAge = 43, userAddress = Address {addressCountry = "
 User {userName = "John", userAge = 43, userAddress = Address {addressCountry = "UK", addressCity = "London", addressIndex = "XXX"}}
 -}
 
-{- | 'Lens' is an 'Optic' that represents composable getters and setters.
+{- | 'Lens' represents composable getters and setters.
+
+'Lens' is an @'Optic' p@ with the 'Strong' constraint on the @p@ type variable.
 
 TODO: ASCII art
 
@@ -596,7 +617,10 @@ payloadAddress = AddressPayload address
 AddressPayload (Address {addressCountry = "UK", addressCity = "Bristol"})
 -}
 
-{- | 'Prism' is an 'Optic' that represents composable constructors and deconstructors.
+{- | 'Prism' represents composable constructors and deconstructors.
+
+'Prism' is an @'Optic' p@ with 'Choice' constraint on the @p@ type
+variable.
 
 TODO: ASCII art
 
@@ -758,7 +782,11 @@ _Right = prism Right $ \case
 {-# INLINE _Right #-}
 
 
-{- | 'Traversal' is 'Optic' which is composable data structure traversal.
+{- | 'Traversal' provides composable ways to visit different parts of
+a data structure.
+
+'Traversal' is an @'Optic' p@ with the 'Choice' and 'Monoidal'
+constraints on the @p@ type variable.
 
 @since 0.0.0.0
 -}
