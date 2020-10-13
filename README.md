@@ -1,5 +1,7 @@
 # prolens
 
+![Prolens Logo](https://user-images.githubusercontent.com/8126674/95865685-da91b080-0d5e-11eb-91cd-b6a7bae29262.png)
+
 [![GitHub CI](https://github.com/kowainik/prolens/workflows/CI/badge.svg)](https://github.com/kowainik/prolens/actions)
 [![Hackage](https://img.shields.io/hackage/v/prolens.svg?logo=haskell)](https://hackage.haskell.org/package/prolens)
 [![MPL-2.0 license](https://img.shields.io/badge/license-MPL--2.0-blue.svg)](LICENSE)
