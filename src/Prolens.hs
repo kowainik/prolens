@@ -103,7 +103,7 @@ module Prolens
     ) where
 
 
-import Control.Applicative (Const (..))
+import Control.Applicative (Const (..), liftA2)
 import Data.Coerce (coerce)
 import Data.Monoid (First (..))
 
@@ -205,16 +205,25 @@ instance (Applicative m) => Choice (Fun m) where
     {-# INLINE right #-}
 
 class Strong p => Monoidal p where
-    pappend :: p a b -> p c d -> p (a,c) (b,d)
+    pappend :: p a b -> p c d -> p (a, c) (b, d)
     pempty :: p a a
 
 instance Monoidal (->) where
-    pappend :: (a -> b) -> (c -> d) -> (a,c) -> (b,d)
+    pappend :: (a -> b) -> (c -> d) -> (a, c) -> (b, d)
     pappend ab cd (a, c) = (ab a, cd c)
     {-# INLINE pappend #-}
 
     pempty :: a -> a
     pempty = id
+    {-# INLINE pempty #-}
+
+instance (Applicative m) => Monoidal (Fun m) where
+    pappend :: Fun m a b -> Fun m c d -> Fun m (a, c) (b, d)
+    pappend (Fun amb) (Fun cmd) = Fun (\(a, c) -> liftA2 (,) (amb a) (cmd c))
+    {-# INLINE pappend #-}
+
+    pempty :: Fun m a a
+    pempty = Fun (pure . id)
     {-# INLINE pempty #-}
 
 {- | 'Optic' takes a connection from @a@ to @b@ (represented as a
@@ -580,6 +589,16 @@ instance Profunctor (Forget r) where
     {-# INLINE dimap #-}
 
 -- | @since 0.0.0.0
+instance Strong (Forget r) where
+    first :: Forget r a b -> Forget r (a, c) (b, c)
+    first (Forget ar) = Forget (ar . fst)
+    {-# INLINE first #-}
+
+    second :: Forget r a b -> Forget r (c, a) (c, b)
+    second (Forget ar) = Forget (ar . snd)
+    {-# INLINE second #-}
+
+-- | @since 0.0.0.0
 instance Monoid r => Choice (Forget r) where
     left :: Forget r a b -> Forget r (Either a c) (Either b c)
     left (Forget ar) = Forget (either ar (const mempty))
@@ -588,6 +607,16 @@ instance Monoid r => Choice (Forget r) where
     right :: Forget r a b -> Forget r (Either c a) (Either c b)
     right (Forget ar) = Forget (either (const mempty) ar)
     {-# INLINE right #-}
+
+-- | @since 0.0.0.0
+instance (Monoid r) => Monoidal (Forget r) where
+    pappend :: Forget r a b -> Forget r c d -> Forget r (a, c) (b, d)
+    pappend (Forget ar) (Forget cr) = Forget (\(a, c) -> ar a <> cr c)
+    {-# INLINE pappend #-}
+
+    pempty :: Forget r a a
+    pempty = Forget (const mempty)
+    {-# INLINE pempty #-}
 
 {- |
 
