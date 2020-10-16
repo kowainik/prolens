@@ -7,7 +7,7 @@ import Test.Hspec (Spec, describe, it)
 import Test.Hspec.Hedgehog (PropertyT, forAll, forAllWith, hedgehog, (===))
 
 import Prolens
-import Test.Data (genFun, genFunction, genHaskeller, genInt, genName, nameL)
+import Test.Data (genFun, genFunction, genForget, genHaskeller, genInt, genName, nameL)
 
 
 lensPropertySpecs :: Spec
@@ -61,6 +61,20 @@ profunctorsSpec = describe "Profunctor" $ do
             eqFun
                 (dimap (ab . bc) (yz . xy) f)
                 (dimap bc yz $ dimap ab xy f)
+    describe "Forget" $ do
+        it "Identity: dimap id id ≡ id" $ hedgehog $ do
+            f <- unForget <$> forAllWith (const "f") genForget
+            x <- forAll genInt
+            dimap id id f x === f x
+        it "Composition: dimap (ab . bc) (yz . xy) ≡ dimap bc yz . dimap ab xy" $ hedgehog $ do
+            f  <- unForget <$> forAllWith (const "f")  genForget
+            ab <- unForget <$> forAllWith (const "ab") genForget
+            bc <- unForget <$> forAllWith (const "bc") genForget
+            xy <- unForget <$> forAllWith (const "xy") genForget
+            yz <- unForget <$> forAllWith (const "xy") genForget
+
+            n <- forAll genInt
+            dimap (ab . bc) (yz . xy) f n === (dimap bc yz . dimap ab xy) f n
 
 eqFun :: Fun Maybe Int Int -> Fun Maybe Int Int -> PropertyT IO ()
 eqFun fun1 fun2 = do
