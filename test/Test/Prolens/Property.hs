@@ -63,20 +63,25 @@ profunctorsSpec = describe "Profunctor" $ do
                 (dimap bc yz $ dimap ab xy f)
     describe "Forget" $ do
         it "Identity: dimap id id ≡ id" $ hedgehog $ do
-            f <- unForget <$> forAllWith (const "f") genForget
-            x <- forAll genInt
-            dimap id id f x === f x
+            f <- forAllWith (const "f") genForget
+            eqForget (dimap id id f) f
         it "Composition: dimap (ab . bc) (yz . xy) ≡ dimap bc yz . dimap ab xy" $ hedgehog $ do
-            f  <- unForget <$> forAllWith (const "f")  genForget
-            ab <- unForget <$> forAllWith (const "ab") genForget
-            bc <- unForget <$> forAllWith (const "bc") genForget
-            xy <- unForget <$> forAllWith (const "xy") genForget
-            yz <- unForget <$> forAllWith (const "xy") genForget
+            f  <- forAllWith (const "f")  genForget
+            ab <- forAllWith (const "ab") genFunction
+            bc <- forAllWith (const "bc") genFunction
+            xy <- forAllWith (const "xy") genFunction
+            yz <- forAllWith (const "xy") genFunction
 
-            n <- forAll genInt
-            dimap (ab . bc) (yz . xy) f n === (dimap bc yz . dimap ab xy) f n
+            eqForget
+                (dimap (ab . bc) (yz . xy) f)
+                (((dimap bc yz) . (dimap ab xy)) f)
 
 eqFun :: Fun Maybe Int Int -> Fun Maybe Int Int -> PropertyT IO ()
 eqFun fun1 fun2 = do
     x <- forAll genInt
     unFun fun1 x === unFun fun2 x
+
+eqForget :: Forget Int Int a -> Forget Int Int a -> PropertyT IO ()
+eqForget forget1 forget2 = do
+    x <- forAll genInt
+    unForget forget1 x === unForget forget2 x
