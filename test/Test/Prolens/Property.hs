@@ -74,7 +74,7 @@ profunctorsSpec = describe "Profunctor" $ do
 
             eqForget
                 (dimap (ab . bc) (yz . xy) f)
-                (((dimap bc yz) . (dimap ab xy)) f)
+                ((dimap bc yz . dimap ab xy) f)
 
 eqFun :: Fun Maybe Int Int -> Fun Maybe Int Int -> PropertyT IO ()
 eqFun fun1 fun2 = do
