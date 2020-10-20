@@ -3,6 +3,7 @@ module Test.Prolens.Property
     , typeclassesPropertySpecs
     ) where
 
+import Hedgehog (Gen)
 import Test.Hspec (Spec, describe, it)
 import Test.Hspec.Hedgehog (PropertyT, forAll, forAllWith, hedgehog, (===))
 
@@ -31,50 +32,37 @@ typeclassesPropertySpecs = describe "Class Laws" -- $ do
 
 profunctorsSpec :: Spec
 profunctorsSpec = describe "Profunctor" $ do
-    describe "(->)" $ do
-        it "Identity: dimap id id ≡ id" $ hedgehog $ do
-            f <- forAllWith (const "f") genFunction
-            x <- forAll genInt
-            dimap id id f x === f x
-        it "Composition: dimap (ab . bc) (yz . xy) ≡ dimap bc yz . dimap ab xy" $ hedgehog $ do
+    profunctorLaws "(->)" genFunction eqFunction
+    profunctorLaws "Fun" genFun eqFun
+    profunctorLaws "Forget" genForget eqForget
 
-            f  <- forAllWith (const "f")  genFunction
-            ab <- forAllWith (const "ab") genFunction
-            bc <- forAllWith (const "bc") genFunction
-            xy <- forAllWith (const "xy") genFunction
-            yz <- forAllWith (const "xy") genFunction
 
-            n <- forAll genInt
-            dimap (ab . bc) (yz . xy) f n === (dimap bc yz . dimap ab xy) f n
-    describe "Fun" $ do
-        it "Identity: dimap id id ≡ id" $ hedgehog $ do
-            f <- forAllWith (const "f") genFun
-            eqFun (dimap id id f) f
-        it "Composition: dimap (ab . bc) (yz . xy) ≡ dimap bc yz . dimap ab xy" $ hedgehog $ do
+profunctorLaws
+  :: Profunctor p
+  => String
+  -> Gen (p Int Int)
+  -> (p Int Int -> p Int Int -> PropertyT IO ())
+  -> Spec
+profunctorLaws name genProfunctor cmp =
+  describe name $ do
+    it "Identity: dimap id id ≡ id" $ hedgehog $ do
+        f <- forAllWith (const "f") genProfunctor
+        dimap id id f `cmp` f
 
-            f  <- forAllWith (const "f")  genFun
-            ab <- forAllWith (const "ab") genFunction
-            bc <- forAllWith (const "bc") genFunction
-            xy <- forAllWith (const "xy") genFunction
-            yz <- forAllWith (const "xy") genFunction
+    it "Composition: dimap (ab . bc) (yz . xy) ≡ dimap bc yz . dimap ab xy" $ hedgehog $ do
+        f  <- forAllWith (const "f")  genProfunctor
+        ab <- forAllWith (const "ab") genFunction
+        bc <- forAllWith (const "bc") genFunction
+        xy <- forAllWith (const "xy") genFunction
+        yz <- forAllWith (const "xy") genFunction
 
-            eqFun
-                (dimap (ab . bc) (yz . xy) f)
-                (dimap bc yz $ dimap ab xy f)
-    describe "Forget" $ do
-        it "Identity: dimap id id ≡ id" $ hedgehog $ do
-            f <- forAllWith (const "f") genForget
-            eqForget (dimap id id f) f
-        it "Composition: dimap (ab . bc) (yz . xy) ≡ dimap bc yz . dimap ab xy" $ hedgehog $ do
-            f  <- forAllWith (const "f")  genForget
-            ab <- forAllWith (const "ab") genFunction
-            bc <- forAllWith (const "bc") genFunction
-            xy <- forAllWith (const "xy") genFunction
-            yz <- forAllWith (const "xy") genFunction
+        dimap (ab . bc) (yz . xy) f `cmp` (dimap bc yz . dimap ab xy) f
 
-            eqForget
-                (dimap (ab . bc) (yz . xy) f)
-                ((dimap bc yz . dimap ab xy) f)
+
+eqFunction :: (Int -> Int) -> (Int -> Int) -> PropertyT IO ()
+eqFunction f g = do
+    n <- forAll genInt
+    f n === g n
 
 eqFun :: Fun Maybe Int Int -> Fun Maybe Int Int -> PropertyT IO ()
 eqFun fun1 fun2 = do
