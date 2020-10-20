@@ -71,16 +71,16 @@ eqFun fun1 fun2 = do
 monoidalSpec :: Spec
 monoidalSpec = describe "Monoidal" $ do
     describe "(->)" $ do
-        it "Identity: pappend pempty id ≡ id" $ hedgehog $ do
-            f <- forAllWith (const "f") genFunction
-            x <- forAll genInt
-            y <- forAll genInt
-            pappend pempty f (x, y) === (x, f y)
-        it "Identity: pappend id pempty ≡ id" $ hedgehog $ do
+        it "Identity: pappend f pempty ≡ first f" $ hedgehog $ do
             f <- forAllWith (const "f") genFunction
             x <- forAll genInt
             y <- forAll genInt
             pappend f pempty (x, y) === (f x, y)
+        it "Identity: pappend pempty f ≡ second f" $ hedgehog $ do
+            f <- forAllWith (const "f") genFunction
+            x <- forAll genInt
+            y <- forAll genInt
+            pappend pempty f (x, y) === second f (x, y)
         it "Associativity (right)" $ hedgehog $ do
             f <- forAllWith (const "f") genFunction
             g <- forAllWith (const "g") genFunction
