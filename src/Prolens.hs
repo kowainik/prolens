@@ -194,7 +194,7 @@ Moreover, @p in@ must have 'Functor' instance first to implement the
 Instances of 'Profunctor' should satisfy the following laws:
 
 * __Identity:__ @'dimap' 'id' 'id' ≡ 'id'@
-* __Composition:__ @'dimap' (inAB . inBC) (outYZ . outXY) ≡ 'dimap' outBC outYZ . 'dimap' outAB outXY@
+* __Composition:__ @'dimap' (inAB . inBC) (outYZ . outXY) ≡ 'dimap' inBC outYZ . 'dimap' inAB outXY@
 
 @since 0.0.0.0
 -}
@@ -239,6 +239,20 @@ The second element of a pair (variable of type @c@) can be of any
 type, and you can decide what type it should be. This is convenient
 for implementing various functions. E.g. 'lens' uses this fact.
 
+Instances of 'Strong' should satisfy the following laws:
+
+* __'first' via 'second' swap:__ @'first' ≡ 'dimap' 'Data.Tuple.swap' 'Data.Tuple.swap' . 'second'@
+* __'second' via 'first' swap:__ @'second' ≡ 'dimap' 'Data.Tuple.swap' 'Data.Tuple.swap' . 'first'@
+
+* __Fst functor:__ @'dimap' 'fst' 'id' ≡ 'fmap' 'fst' . 'first'@
+* __Snd functor:__ @'dimap' 'snd' 'id' ≡ 'fmap' 'snd' . 'second'@
+
+* __Distribution over 'first':__ @'dimap' ('second' f) 'id' . 'first' ≡ 'fmap' ('second' f) . 'first'@
+* __Distribution over 'second':__ @'dimap' ('first' f) 'id' . 'second' ≡ 'fmap' ('first' f) . 'second'@
+
+* __Associativity of 'first':__ @'first' . 'first' ≡ 'dimap' (\\((a, b), c) -> (a, (b, c))) (\\(a, (b, c)) -> ((a, b), c)) . 'first'@
+* __Associativity of 'second':__ @'second' . 'second' ≡ 'dimap' (\\(a, (b, c)) -> ((a, b), c)) (\\((a, b), c) -> (a, (b, c))) . 'second'@
+
 @since 0.0.0.0
 -}
 class Profunctor p => Strong p where
@@ -271,6 +285,39 @@ instance (Functor m) => Strong (Fun m) where
 The other element of 'Either' (variable of type @c@) can be of any
 type, and you can decide what type it should be. This is convenient
 for implementing various functions. E.g. 'prism' uses this fact.
+
+
+Assuming, we have the following functions in scope:
+
+@
+swapEither :: Either a b -> Either b a
+swapEither (Left a) = Right a
+swapEither (Right b) = Left b
+
+unnestLeft :: Either (Either a b) c -> Either a (Either b c)
+unnestLeft (Left (Left a)) = Left a
+unnestLeft (Left (Right b)) = Right (Left b)
+unnestLeft (Right c) = Right (Right c)
+
+nestLeft :: Either a (Either b c) -> Either (Either a b) c
+nestLeft (Left a) = Left (Left a)
+nestLeft (Right (Left b)) = Left (Right b)
+nestLeft (Right (Right c)) = Right c
+@
+
+Instances of 'Choice' should satisfy the following laws:
+
+* __'left' via 'right' swap:__ @'left' ≡ 'dimap' swapEither swapEither . 'right'@
+* __'right' via 'left' swap:__ @'right' ≡ 'dimap' swapEither swapEither . 'left'@
+
+* __'Left' functor:__ @'fmap' 'Left' ≡ 'dimap' 'Left' 'id' . 'left'@
+* __'Right' functor:__ @'fmap' 'Right' ≡ 'dimap' 'Right' 'id' . 'right'@
+
+* __Distribution over 'left':__ @'dimap' ('right' f) 'id' . 'left' ≡ 'fmap' ('right' f) . 'left'@
+* __Distribution over 'right':__ @'dimap' ('left' f) 'id' . 'right' ≡ 'fmap' ('left' f) . 'right'@
+
+* __Associativity of 'left':__ @'left' . 'left' ≡ 'dimap' unnestLeft nestLeft . 'left'@
+* __Associativity of 'right':__ @'right' . 'right' ≡ 'dimap' nestLeft unnestLeft . 'right'@
 
 @since 0.0.0.0
 -}
@@ -309,11 +356,27 @@ instance (Applicative m) => Choice (Fun m) where
 {- | 'Monoidal' is 'Strong' 'Profunctor' that can be appended. It is
 similar to 'Monoid's but for higher-kinded types.
 
+Instances of 'Monoidal' should satisfy the following laws:
+
+* __Right identity:__ @'pappend' f 'pempty' ≡ 'first' f@
+* __Left identity:__ @'pappend' 'pempty' f ≡ 'second' f@
+* __Associativity:__ @'pappend' f ('pappend' g h) ⋍ 'pappend' ('pappend' f g) h@
+
+⚠️ __Note:__ The @⋍@ operator in the __associativity__ law is equality
+ignoring the structure. The law is written in that way because
+'pappend' returns a tuple and the order of nested tuples depends on
+the order of 'pappend' applications. In practice, this means, that if
+you want to check the law, you reorder tuples in the following way:
+
+@
+'pappend' f ('pappend' g h) ≡ 'dimap' (\\(a, (b, c)) -> ((a, b), c)) (\\((a, b), c) -> (a, (b, c))) ('pappend' ('pappend' f g) h)
+@
+
 @since 0.0.0.0
 -}
 class Strong p => Monoidal p where
     pappend :: p a b -> p c d -> p (a, c) (b, d)
-    pempty :: p a a
+    pempty  :: p a a
 
 -- | @since 0.0.0.0
 instance Monoidal (->) where
