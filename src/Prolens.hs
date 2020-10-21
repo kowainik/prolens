@@ -290,19 +290,9 @@ for implementing various functions. E.g. 'prism' uses this fact.
 Assuming, we have the following functions in scope:
 
 @
-swapEither :: Either a b -> Either b a
-swapEither (Left a) = Right a
-swapEither (Right b) = Left b
-
-unnestLeft :: Either (Either a b) c -> Either a (Either b c)
-unnestLeft (Left (Left a)) = Left a
-unnestLeft (Left (Right b)) = Right (Left b)
-unnestLeft (Right c) = Right (Right c)
-
-nestLeft :: Either a (Either b c) -> Either (Either a b) c
-nestLeft (Left a) = Left (Left a)
-nestLeft (Right (Left b)) = Left (Right b)
-nestLeft (Right (Right c)) = Right c
+swapEither  :: Either a b -> Either b a
+unnestLeft  :: Either (Either a b) c -> Either a (Either b c)
+unnestRight :: Either a (Either b c) -> Either (Either a b) c
 @
 
 Instances of 'Choice' should satisfy the following laws:
@@ -316,8 +306,8 @@ Instances of 'Choice' should satisfy the following laws:
 * __Distribution over 'left':__ @'dimap' ('right' f) 'id' . 'left' ≡ 'fmap' ('right' f) . 'left'@
 * __Distribution over 'right':__ @'dimap' ('left' f) 'id' . 'right' ≡ 'fmap' ('left' f) . 'right'@
 
-* __Associativity of 'left':__ @'left' . 'left' ≡ 'dimap' unnestLeft nestLeft . 'left'@
-* __Associativity of 'right':__ @'right' . 'right' ≡ 'dimap' nestLeft unnestLeft . 'right'@
+* __Associativity of 'left':__ @'left' . 'left' ≡ 'dimap' unnestLeft unnestRight . 'left'@
+* __Associativity of 'right':__ @'right' . 'right' ≡ 'dimap' unnestRight unnestLeft . 'right'@
 
 @since 0.0.0.0
 -}
