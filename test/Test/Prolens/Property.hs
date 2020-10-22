@@ -27,8 +27,9 @@ lensPropertySpecs = describe "Lens Laws" $ do
         set nameL valueNew (set nameL value source) === set nameL valueNew source
 
 typeclassesPropertySpecs :: Spec
-typeclassesPropertySpecs = describe "Class Laws" -- $ do
+typeclassesPropertySpecs = describe "Class Laws" $ do
     profunctorsSpec
+    monoidalSpec
 
 profunctorsSpec :: Spec
 profunctorsSpec = describe "Profunctor" $ do
@@ -73,3 +74,33 @@ eqForget :: Forget Int Int a -> Forget Int Int a -> PropertyT IO ()
 eqForget forget1 forget2 = do
     x <- forAll genInt
     unForget forget1 x === unForget forget2 x
+    
+monoidalSpec :: Spec
+monoidalSpec = describe "Monoidal" $ do
+    describe "(->)" $ do
+        it "Identity: pappend f pempty ≡ first f" $ hedgehog $ do
+            f <- forAllWith (const "f") genFunction
+            x <- forAll genInt
+            y <- forAll genInt
+            pappend f pempty (x, y) === first f (x, y)
+        it "Identity: pappend pempty f ≡ second f" $ hedgehog $ do
+            f <- forAllWith (const "f") genFunction
+            x <- forAll genInt
+            y <- forAll genInt
+            pappend pempty f (x, y) === second f (x, y)
+        it "Associativity (right)" $ hedgehog $ do
+            f <- forAllWith (const "f") genFunction
+            g <- forAllWith (const "g") genFunction
+            h <- forAllWith (const "h") genFunction
+            x <- forAll genInt
+            y <- forAll genInt
+            z <- forAll genInt
+            pappend f (pappend g h) (x, (y, z)) === (f x, (g y, h z))
+        it "Associativity (left)" $ hedgehog $ do
+            f <- forAllWith (const "f") genFunction
+            g <- forAllWith (const "g") genFunction
+            h <- forAllWith (const "h") genFunction
+            x <- forAll genInt
+            y <- forAll genInt
+            z <- forAll genInt
+            pappend (pappend f g) h ((x, y), z) === ((f x, g y), h z)
