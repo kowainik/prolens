@@ -19,6 +19,7 @@ module Test.Data
       -- * Generators
     , genFun
     , genFunction
+    , genForget
     , genHaskeller
     , genInt
     , genKnowledge
@@ -27,7 +28,7 @@ module Test.Data
 
 import Test.Hspec.Hedgehog (MonadGen)
 
-import Prolens (Fun (..), Lens', Prism', lens, prism')
+import Prolens (Forget (..), Fun (..), Lens', Prism', lens, prism')
 
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
@@ -129,3 +130,6 @@ genFun = genFunction >>= \f -> Gen.element $ map Fun
     , const Nothing
     , Just . f
     ]
+
+genForget :: MonadGen m => m (Forget Int Int a)
+genForget = Forget <$> genFunction
