@@ -27,7 +27,6 @@ module Test.Data
     ) where
 
 import Test.Hspec.Hedgehog (MonadGen)
-import GHC.Exts (inline)
 
 import Prolens (Forget (..), Fun (..), Lens', Prism', lens, prism')
 
@@ -80,7 +79,7 @@ data Grade
     deriving stock (Show, Eq)
 
 _Mark :: Prism' Grade Int
-_Mark = inline prism' Mark $ \case
+_Mark = prism' Mark $ \case
     Mark a -> Just a
     _other -> Nothing
 {-# INLINE _Mark #-}
