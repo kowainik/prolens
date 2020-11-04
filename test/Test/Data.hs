@@ -27,6 +27,7 @@ module Test.Data
     ) where
 
 import Test.Hspec.Hedgehog (MonadGen)
+import GHC.Exts (inline)
 
 import Prolens (Forget (..), Fun (..), Lens', Prism', lens, prism')
 
@@ -79,7 +80,7 @@ data Grade
     deriving stock (Show, Eq)
 
 _Mark :: Prism' Grade Int
-_Mark = prism' Mark $ \case
+_Mark = inline prism' Mark $ \case
     Mark a -> Just a
     _other -> Nothing
 {-# INLINE _Mark #-}
@@ -132,4 +133,4 @@ genFun = genFunction >>= \f -> Gen.element $ map Fun
     ]
 
 genForget :: MonadGen m => m (Forget Int Int a)
-genForget = Forget <$> genFunction
+genForget = Forget . unFun <$> genFun
