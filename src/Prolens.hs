@@ -148,6 +148,7 @@ import Control.Applicative (Const (..), liftA2)
 import Data.Coerce (coerce)
 import Data.Monoid (First (..))
 
+
 -- $setup
 -- >>> import Data.Function ((&))
 
@@ -803,13 +804,14 @@ forgets about its last type variable.
 @since 0.0.0.0
 -}
 newtype Forget r a b = Forget
-    { unForget :: a -> r
+    { unForget :: a -> Maybe r
     }
 
 -- | @since 0.0.0.0
 instance Functor (Forget r x) where
     fmap :: (a -> b) -> Forget r x a -> Forget r x b
     fmap _ = coerce
+    {-# INLINE fmap #-}
 
 -- | @since 0.0.0.0
 instance Profunctor (Forget r) where
@@ -828,23 +830,24 @@ instance Strong (Forget r) where
     {-# INLINE second #-}
 
 -- | @since 0.0.0.0
-instance Monoid r => Choice (Forget r) where
+instance Choice (Forget r) where
     left :: Forget r a b -> Forget r (Either a c) (Either b c)
-    left (Forget ar) = Forget (either ar (const mempty))
+    left (Forget ar) = Forget (either ar (const Nothing))
     {-# INLINE left #-}
 
     right :: Forget r a b -> Forget r (Either c a) (Either c b)
-    right (Forget ar) = Forget (either (const mempty) ar)
+    right (Forget ar) = Forget (either (const Nothing) ar)
     {-# INLINE right #-}
 
 -- | @since 0.0.0.0
-instance (Monoid r) => Monoidal (Forget r) where
+instance Monoidal (Forget r) where
     pappend :: Forget r a b -> Forget r c d -> Forget r (a, c) (b, d)
-    pappend (Forget ar) (Forget cr) = Forget (\(a, c) -> ar a <> cr c)
+    pappend (Forget ar) (Forget cr) = Forget
+        (\(a, c) -> getFirst $  First (ar a) <> First (cr c))
     {-# INLINE pappend #-}
 
     pempty :: Forget r a a
-    pempty = Forget (const mempty)
+    pempty = Forget (const Nothing)
     {-# INLINE pempty #-}
 
 {- | Match a value from @source@ type.
@@ -853,14 +856,14 @@ instance (Monoid r) => Monoidal (Forget r) where
 -}
 preview
     :: forall a source p
-    .  (p ~ Forget (First a))
+    .  (p ~ Forget a)
     => Optic p source source a a  -- ^ 'Optic' that can be prism
     -> source  -- ^ Object (possible sum type)
     -> Maybe a  -- ^ Value of type @a@ from a specific constructor
 preview paapss = coerce (paapss wrap)
   where
-    wrap :: Forget (First a) a a
-    wrap = coerce @(a -> Maybe a) @(Forget (First a) a a) Just
+    wrap :: Forget a a a
+    wrap = coerce @(a -> Maybe a) @(Forget a a a) Just
     {-# INLINE wrap #-}
 {-# INLINE preview #-}
 -- preview paapss = getFirst . unForget (paapss (Forget (First . Just)))

@@ -132,4 +132,4 @@ genFun = genFunction >>= \f -> Gen.element $ map Fun
     ]
 
 genForget :: MonadGen m => m (Forget Int Int a)
-genForget = Forget <$> genFunction
+genForget = Forget . unFun <$> genFun

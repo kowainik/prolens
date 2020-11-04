@@ -9,7 +9,7 @@ module Test.Prolens.Inspection
     ( inspectionSpecs
     ) where
 
-import Test.Hspec (Spec, describe, it, shouldSatisfy, xit)
+import Test.Hspec (Spec, describe, it, shouldSatisfy)
 import Test.Inspection (Result (..), hasNoTypeClasses, inspectTest, (===))
 
 import Prolens (preview, set, view)
@@ -77,7 +77,7 @@ matchMarkManual grade = case grade of
 prismSpecs :: Spec
 prismSpecs = describe "Prism" $ do
     describe "preview" $ do
-        xit "preview _Ctor x ≡ case (Ctor _) of" $
+        it "preview _Ctor x ≡ case (Ctor _) of" $
             $(inspectTest $ 'matchMarkPrism === 'matchMarkManual) `shouldSatisfy` isSuccess
 
 -- Helper functions
