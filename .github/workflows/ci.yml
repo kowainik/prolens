@@ -24,7 +24,7 @@ jobs:
           - os: macOS-latest
             ghc: 8.6.5
           - os: windows-latest
-            ghc: 8.8.4
+            ghc: 8.10.2
           - os: windows-latest
             ghc: 8.6.5
 
