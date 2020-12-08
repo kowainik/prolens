@@ -96,4 +96,4 @@ test-suite doctest
   import:              common-test
   type:                exitcode-stdio-1.0
   main-is:             Doctest.hs
-  build-depends:       doctest ^>= 0.17
+  build-depends:       doctest >= 0.16.3 && < 0.18

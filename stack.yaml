@@ -1,4 +1,1 @@
-resolver: lts-16.17
-
-extra-deps:
-  - doctest-0.17
+resolver: lts-16.25
