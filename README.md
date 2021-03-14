@@ -74,8 +74,8 @@ will need to set it up with the three easy steps:
    this section could look like this:
 
    ```haskell
-   build-depends: base ^>= 4.14
-                , prolens ^>= 0.0
+   build-depends: base ^>= 4.15
+                , prolens ^>= LATEST_VERSION
    ```
 2. In the module where you wish to use composable getters and setters,
    you should add the import:
@@ -106,7 +106,7 @@ the following to the `extra-deps` section of your `stack.yaml` file:
 
 ```yaml
 extra-deps:
-  - prolens-0.0.0.0
+  - prolens-CURRENT_VERSION
 ```
 
 ## Comparison to other libraries
