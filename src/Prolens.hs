@@ -5,9 +5,12 @@
 {-# LANGUAGE TypeFamilies          #-}
 
 {- |
-Copyright: (c) 2020 Kowainik
-SPDX-License-Identifier: MPL-2.0
-Maintainer: Kowainik <xrom.xkov@gmail.com>
+Module                  : Summoner
+Copyright               : (c) 2020-2021 Kowainik
+SPDX-License-Identifier : MPL-2.0
+Maintainer              : Kowainik <xrom.xkov@gmail.com>
+Stability               : Stable
+Portability             : Portable
 
 The @prolens@ package is a Haskell library with a minimal and lightweight
 implementation of optics based on 'Profunctor's. __'Optic'__ is a high-level
@@ -628,7 +631,7 @@ s ^. l = view l s
 -}
 infixr 4 .~
 (.~) :: Lens' source a -> a -> source -> source
-(.~) = set
+(.~) l = set l
 {-# INLINE (.~) #-}
 
 {- | The operator form of 'over'.
@@ -637,7 +640,7 @@ infixr 4 .~
 -}
 infixr 4 %~
 (%~) :: Lens' source a -> (a -> a) -> source -> source
-(%~) = over
+(%~) l = over l
 {-# INLINE (%~) #-}
 
 {- | 'Lens'' for a tuple on the first argument.
