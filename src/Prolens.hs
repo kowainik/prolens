@@ -5,7 +5,7 @@
 {-# LANGUAGE TypeFamilies          #-}
 
 {- |
-Module                  : Summoner
+Module                  : Prolens
 Copyright               : (c) 2020-2021 Kowainik
 SPDX-License-Identifier : MPL-2.0
 Maintainer              : Kowainik <xrom.xkov@gmail.com>

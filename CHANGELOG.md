@@ -15,7 +15,7 @@ The changelog is available [on GitHub][2].
   Add typeclasses laws tests for the following types:
 
     + `Profunctor` laws for `Forget`
-	+ `Monoidal` laws for `(->)`
+    + `Monoidal` laws for `(->)`
 
 Thanks @CristhianMotoche, @xplosunn for helping with this release!
 
